@@ -40,7 +40,7 @@ class View extends \Phalcon\Mvc\View
      */
     protected function _engineRender($engines, $viewPath, $silence, $mustClean, \Phalcon\Cache\BackendInterface $cache = null)
     {
-        if (null === $this->getViewsDir()) {
+        if (null === $this->getViewsDir() || is_array($this->getViewsDir()) && count($this->getViewsDir()) == 0) {
             $moduleName = $this->getDI()
                 ->getDispatcher()
                 ->getModuleName();
