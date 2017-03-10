@@ -83,7 +83,7 @@ class Loader extends \Phalcon\Loader implements \Phalcon\Di\InjectionAwareInterf
         //加载远程模块
         $modules = $this->di['config']->modulesService->toArray();
         //$remoteServices = $this->getRemoteService();
-        if ($classArr[1] == 'Service' && array_key_exists($moduleName, $modules)) {
+        if (isset($classArr[1]) && $classArr[1] == 'Service' && array_key_exists($moduleName, $modules)) {
             $this->load($className);
             return true;
         }
