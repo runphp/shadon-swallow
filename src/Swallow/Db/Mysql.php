@@ -65,13 +65,13 @@ class Mysql extends \Phalcon\Db\Adapter\Pdo\Mysql implements InjectionAwareInter
     public function query($sqlStatement, $bindParams = null, $bindTypes = null)
     {
         try {
-            parent::query($sqlStatement, $bindParams, $bindTypes);
+            $statement = parent::query($sqlStatement, $bindParams, $bindTypes);
             $this->reconnectTriedCount = 0;
         } catch (\PDOException $e) {
             $logger = $this->getDI()->getLogger();
-            $logDir = $this->getDI()->getConfig()->path->errorLog 
+            $logDir = $this->getDI()->getConfig()->path->errorLog
                     . '/mysql'
-                    . '/' . date('Ym') 
+                    . '/' . date('Ym')
                     . '/' . date('d');
             $logName = 'mysql_query_exception_' . date('H');
             $logStr['code'] = $e->getCode();
@@ -79,18 +79,20 @@ class Mysql extends \Phalcon\Db\Adapter\Pdo\Mysql implements InjectionAwareInter
             $logStr['sqlStatement'] = $sqlStatement;
             $logStr = PHP_EOL .var_export($logStr, true);
             $logger->setDir($logDir)->setName($logName)->record($logStr)->save();
-            
+
             if(
-                    $e->getCode() != 'HY000' 
+                    $e->getCode() != 'HY000'
                     || !stristr($e->getMessage(), 'server has gone away')
                     || $this->reconnectTriedCount > self::RECONNECT_TRIED_MAX) {
                 throw $e;
             }
-            
+
             $this->reconnectTriedCount++;
             $this->close();
             $this->connect();
-            $this->query($sqlStatement, $bindParams, $bindTypes);
+            return $this->query($sqlStatement, $bindParams, $bindTypes);
         }
+    
+        return $statement;
     }
 }
