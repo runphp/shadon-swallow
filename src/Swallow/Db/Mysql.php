@@ -68,6 +68,18 @@ class Mysql extends \Phalcon\Db\Adapter\Pdo\Mysql implements InjectionAwareInter
             parent::query($sqlStatement, $bindParams, $bindTypes);
             $this->reconnectTriedCount = 0;
         } catch (\PDOException $e) {
+            $logger = $this->getDI()->getLogger();
+            $logDir = $this->getDI()->getConfig()->path->errorLog 
+                    . '/mysql'
+                    . '/' . date('Ym') 
+                    . '/' . date('d');
+            $logName = 'mysql_query_exception_' . date('H');
+            $logStr['code'] = $e->getCode();
+            $logStr['message'] = $e->getMessage();
+            $logStr['sqlStatement'] = $sqlStatement;
+            $logStr = PHP_EOL .var_export($logStr, true);
+            $logger->setDir($logDir)->setName($logName)->record($logStr)->save();
+            
             if(
                     $e->getCode() != 'HY000' 
                     || !stristr($e->getMessage(), 'server has gone away')
