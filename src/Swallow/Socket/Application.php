@@ -580,31 +580,7 @@ class Application extends \Phalcon\Mvc\Application
         }
         return $array[1];
     }
-
-    /**
-     * 解密 加密数据
-     *
-     * @param array $data
-     * @return mixed
-     */
-    private function decode($data)
-    {
-        if (empty($data)) {
-            throw new LogicException("Request parameter error!", StatusCode::SERVICE_BAD_REQUEST);
-        }
-        $key = ! empty($this->tokenConfig['encoding_aes_key']) ? $this->tokenConfig['encoding_aes_key'] : '';
-        if (empty($key)) {
-            throw new LogicException("access_token invalid ", StatusCode::ACCESS_TOKEN_INVALID);
-        }
-        $data = strrev($data);
-        $iv = substr($data, 0, 8);
-        $this->desCrypt = new \Swallow\Toolkit\Encrypt\DesCrypt($key, $iv);
-        $length = strlen($data) - 14;
-        $decodeData = substr($data, 8, $length);
-        $data = json_decode($this->desCrypt->decrypt($decodeData), true);
-        return $data;
-    }
-
+    
     /**
      * 日志记录
      *
@@ -647,4 +623,68 @@ class Application extends \Phalcon\Mvc\Application
         $logStr = implode(PHP_EOL, $logInfo) . PHP_EOL . PHP_EOL;
         $logger->setDir($logDir)->setName($logFileName)->record($logStr)->save();
     }
+
+    /**
+     * 解密 加密数据
+     *
+     * @param array $data
+     * @return mixed
+     */
+    private function decode($data)
+    {
+        if (empty($data)) {
+            throw new LogicException("Request parameter error!", StatusCode::SERVICE_BAD_REQUEST);
+        }
+        $key = ! empty($this->tokenConfig['encoding_aes_key']) ? $this->tokenConfig['encoding_aes_key'] : '';
+        if (empty($key)) {
+            throw new LogicException("access_token invalid ", StatusCode::ACCESS_TOKEN_INVALID);
+        }
+        $data = strrev($data);
+        $iv = substr($data, 0, 8);
+        $this->desCrypt = new \Swallow\Toolkit\Encrypt\DesCrypt($key, $iv);
+        $length = strlen($data) - 14;
+        $decodeData = substr($data, 8, $length);
+        $data = json_decode($this->desCrypt->decrypt($decodeData), true);
+        return $data;
+    }
+    
+    /**
+     * 日志记录
+     *
+     * @param array $data 返回结果
+     * @author zengzhihao<zengzhihao@eelly.net>
+     * @emendator fenghaikun<fenghaikun@eelly.net>
+     * @since  2015年12月14日
+     */
+    private function logging(array $data)
+    {
+        if (empty(self::$tokenConfig)) {
+            return;
+        }
+        $tokenInfo = self::$tokenConfig;
+        unset($tokenInfo['app_auth']);
+        $logger = $this->getDI()->getLogger();
+
+        //记录每次请求信息，如果是非200的正常返回，多记录返回给用户看的数据
+        $serviceLogPath = $this->getDI()->getConfig()->path->serviceLog;
+        $logDir = $serviceLogPath.'/' . $tokenInfo['app_name'] . '/' . date('Ym') . '/' . date('Ymd');
+        $logName = $data['status'] == 200 ? 'app_access_200'. '_' . date('Ymd_H') : 'app_access_' . $data['status'] . '_' . date('Ymd_H');
+        $logStr['access_token_info'] = $tokenInfo;
+        $logStr['user_login_info'] = $this->userLoginInfo;
+        $logStr['request_param'] = $this->requestParam;
+        //APP_DEBUG 模式开启数据记录
+        $logStr['return_data'] = ($data['status'] == 200 && !APP_DEBUG ) ? '[正常数据,隐藏]' : $data;
+        //不是正常返回200的，额外记录一些调试信息
+        ($data['status'] != 200 || !empty($this->debugInfo)) && $logStr['exception_debug_info'] = $this->debugInfo;
+        $logStr = PHP_EOL .var_export($logStr, true);
+
+        //按uid划分日志
+        if (\Phalcon\Di::getDefault()->getConfig()->isUserLog && isset($this->userLoginInfo['uid'])) {
+            $logDir = $serviceLogPath.'/' . $tokenInfo['app_name'] . '/uid_' . $this->userLoginInfo['uid'] . '/' . date('Ym') . '/' . date('Ymd');
+            $logger->setDir($logDir)->setName($logName)->record($logStr)->save();
+        } else {
+            $logger->setDir($logDir)->setName($logName)->record($logStr)->save();
+        }
+    }
+
 }
