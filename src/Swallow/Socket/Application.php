@@ -181,13 +181,10 @@ class Application extends \Phalcon\Mvc\Application
         $data = $this->handle();
         //日志记录
         $this->logging($data);
-        $retval = $signature = '';
-        if ($data['status'] == 200) {
-            $retval = json_encode($data['retval']);
-            $retval = $this->desCrypt->encrypt($retval);
-            //生成签名
-            $signature = $this->signature(json_encode($retval));
-        }
+        $retval = json_encode($data['retval']);
+        $retval = $this->desCrypt->encrypt($retval);
+        //生成签名
+        $signature = $this->signature(json_encode($retval));
         $data['retval'] = ['data' => $retval, 'signature' => $signature];
         return json_encode($data);
     }
