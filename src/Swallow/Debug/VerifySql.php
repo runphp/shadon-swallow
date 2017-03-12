@@ -90,7 +90,7 @@ class VerifySql implements \Phalcon\Di\InjectionAwareInterface
         if (isset($called['class']) && $called['class'] == 'Phalcon\Mvc\Model\MetaData'){
             $called = $backtrace[13];
         }
-        !isset($called['class']) && $called = $backtrace[8];
+        !isset($called['class']) && $called = $backtrace[9];
         $called['class'] == 'Swallow\Service\LogicProxy' && $called = $backtrace[7];
         $module = explode('\\', $called['class']);
         $module = strtolower($module[0]);
