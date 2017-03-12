@@ -986,7 +986,7 @@ class Application extends \Phalcon\Mvc\Application
      */
     public function getRequestData()
     {
-        
+        return $this->requestData;
     }
 
     /**
@@ -998,7 +998,7 @@ class Application extends \Phalcon\Mvc\Application
      */
     public function getRequestDataDecrypt()
     {
-        
+        return $this->requestDataDecrypt;
     }
 
 }
