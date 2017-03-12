@@ -86,7 +86,7 @@ class VerifySql implements \Phalcon\Di\InjectionAwareInterface
         }
         
         $backtrace = debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, 15);
-        $called = $backtrace[9];
+        $called = $backtrace[10];
         if (isset($called['class']) && $called['class'] == 'Phalcon\Mvc\Model\MetaData'){
             $called = $backtrace[13];
         }
