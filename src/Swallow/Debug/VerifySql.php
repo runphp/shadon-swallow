@@ -99,7 +99,7 @@ class VerifySql implements \Phalcon\Di\InjectionAwareInterface
         //$tables = $di->getConfig()->table->toArray();
         $noAllow = array_diff($matchs[0], $tables);
         if (! empty($noAllow)) {
-            throw new \Exception('SQL查询语句包含不充许查询的表 ：' . $sql);
+            throw new \Exception('SQL查询语句包含不允许查询的表 ：' . $sql);
         }
         
         preg_match_all('/ join /i', $sql, $matchs);

@@ -30,6 +30,9 @@ class SendResponse extends \Swallow\Di\Injectable
     {
         //fis3异步资源加载
         $view = $this->getDI()->getView();
+        if (null === $view->getViewsDir() || is_array($view->getViewsDir()) && count($view->getViewsDir()) == 0) {
+            return;
+        }
         $viewsDir = substr($view->getViewsDir(), 9);
         $pickView = $view->getPickView();
         $pickViewNum = count($pickView);
