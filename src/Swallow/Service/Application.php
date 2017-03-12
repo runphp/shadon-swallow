@@ -401,6 +401,8 @@ class Application extends \Phalcon\Mvc\Application
                     }
                     unset($this->args['clear']);
                 }
+            } else {
+                $this->args = [];
             }
             //验证登陆
             $isLogin = false;
