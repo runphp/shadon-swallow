@@ -58,8 +58,8 @@ class VerifyBack
                 }
                 break;
             case 'Service':
-                if (! in_array($classArr[1], ['Logic', 'Controller', 'Console'])) {
-                    $msg = '服务层只能在控制层和逻辑层调用' . $classFunction;
+                if (! in_array($classArr[1], ['Logic', 'Controller', 'Console', 'Events'])) {
+                    $msg = '服务层只能在控制层, 逻辑层, console层, events层调用' . $classFunction;
                 } elseif ($classNameArr[0] == $classArr[0] && $classArr[1] == 'Logic') {
                     $msg = '逻辑层不能调用本模块的服务层' . $classFunction;
                 }
