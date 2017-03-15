@@ -709,7 +709,7 @@ class Application extends \Phalcon\Mvc\Application
         }
 
         // 获取登录缓存信息
-        $cache = $this->getDI()->getShared('defaultCache')->getLoginCache();
+        $cache = $this->getDI()->get('Api\\Lib\\Cache\\DefaultCache', [])->getLoginCache();
         $this->userLoginInfo = $cache->get($loginData['user_login_token']);
         if (empty($this->userLoginInfo) 
                 || ! isset($this->userLoginInfo['dateline']) 

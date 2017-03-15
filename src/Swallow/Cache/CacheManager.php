@@ -76,8 +76,7 @@ class CacheManager implements \Phalcon\DI\InjectionAwareInterface
             $cache = $config->cache->toArray();
         }
         $backendType = $cache['backend'];
-        $loginMemcache = 'login' == $this->type ? ucfirst($this->type) : '';
-        $backend = 'Swallow\\Cache\\Backend\\' . $backendType . $loginMemcache;
+        $backend = 'Swallow\\Cache\\Backend\\' . $backendType;
         $frontend = 'Swallow\\Cache\\Frontend\\' . $cache['frontend'];
         $backendOptions = $cache[$backendType];
         if (isset($backendOptions['servers'][$this->type])) {
