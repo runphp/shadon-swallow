@@ -472,7 +472,7 @@ class Application extends \Phalcon\Mvc\Application
                 //模块调模块，不验证
                 if ($this->transmissionFrom != 'Module') {
                     //判断是否获取access_token 是则不验证
-                    if (! $this->isToGetToken) {
+                    if (! $this->isToGetToken && !$this->isTestVerify()) {
                         //验证权限
                         $isLogin = $this->verifyPermissions($this->app, $class, $this->method, $isOld);
                         $this->secret = self::$tokenConfig['token'];
