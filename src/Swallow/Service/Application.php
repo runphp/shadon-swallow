@@ -230,6 +230,12 @@ class Application extends \Phalcon\Mvc\Application
     private $handleRetval;
     
     /**
+     * 数据模式
+     * @var string 
+     */
+    private $transmissionMode;
+   
+    /**
      * 注册标准模块.
      *
      * 自动把模块名转为下面格式
@@ -272,6 +278,9 @@ class Application extends \Phalcon\Mvc\Application
         $data = $this->handle();
         //日志记录
         $this->logging($data);
+        if($this->isTestVerify()){
+            return json_encode($data);
+        }
         $retval = $signature = '';
         if ($data['status'] == 200) {
             $this->isPhinx || $data['retval'] = Arrays::toString($data['retval']);
@@ -303,7 +312,8 @@ class Application extends \Phalcon\Mvc\Application
             }
             $defaultDi = $this->getDI();
             $request = $defaultDi->getRequest();
-            $transmissionMode = $request->getHeader('Transmission-Mode') 
+            //var_dump($request->get());die();
+            $transmissionMode = $this->transmissionMode = $request->getHeader('Transmission-Mode') 
                     ? $request->getHeader('Transmission-Mode') 
                     : $request->get('Transmission-Mode');
             $this->transmissionFrom = 
@@ -316,7 +326,7 @@ class Application extends \Phalcon\Mvc\Application
             $this->isToGetToken = $transmissionToken ? $transmissionToken : $request->get('Transmission-Token');
             $isOld = false;
             $option = [];
-            if (! $this->isToGetToken) {
+            if (! $this->isToGetToken && !$this->isTestVerify()) {
                 //验证access_token
                 $res = \Api\Logic\CredentialLogic::getInstance()->verifyAccessToken($this->transmissionFrom);
                 self::$tokenConfig = $res['data'];
@@ -999,6 +1009,18 @@ class Application extends \Phalcon\Mvc\Application
     public function getRequestDataDecrypt()
     {
         return $this->requestDataDecrypt;
+    }
+    
+    /**
+     * 是否开启测试模式 - 参数校验
+     * 
+     * @author 李伟权   <liweiquan@eelly.net>
+     * @since 2017年3月12日
+     * @return boolean
+     */
+    private function isTestVerify()
+    {
+        return APP_DEBUG && $this->transmissionMode != 'Security';
     }
 
 }
