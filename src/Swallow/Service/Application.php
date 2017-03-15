@@ -312,7 +312,7 @@ class Application extends \Phalcon\Mvc\Application
             }
             $defaultDi = $this->getDI();
             $request = $defaultDi->getRequest();
-            $this->transmissionMode = $transmissionMode = $request->getHeader('Transmission-Mode') 
+            $this->transmissionMode = $request->getHeader('Transmission-Mode') 
                     ? $request->getHeader('Transmission-Mode') 
                     : $request->get('Transmission-Mode');
             $this->transmissionFrom = 
@@ -330,9 +330,9 @@ class Application extends \Phalcon\Mvc\Application
                 $res = \Api\Logic\CredentialLogic::getInstance()->verifyAccessToken($this->transmissionFrom);
                 self::$tokenConfig = $res['data'];
             }
-            if ($transmissionMode == 'Security') {
+            if ($this->transmissionMode == 'Security') {
                 // 如果启用加密安全传输
-                $this->requestData = $transmissionMode == 'Security' ? $request->get('data') : $request->getPost('data');
+                $this->requestData = $this->transmissionMode == 'Security' ? $request->get('data') : $request->getPost('data');
                 $this->requestDataDecrypt = $this->decode($this->requestData, $this->transmissionFrom, $transmissionVersion); // 解码
                 $verify = $this->verifyParam($this->requestDataDecrypt); // 验证
                 if ($verify == false) {
