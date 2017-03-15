@@ -33,6 +33,7 @@ class ConsoleDi extends \Phalcon\Di\FactoryDefault\Cli
             "router"             => new Service("router", "\Swallow\\Console\Router", true),
             'security'           => new Service('security', "\Swallow\Security", true),
             'transactionManager' => new Service('transactionManager', "\Swallow\Mvc\Model\Transaction\Manager", true),
+            'collectionManager'  => new Service('collectionManager', "\Swallow\Mvc\Collection\Manager", true),
         ];
     }
 }

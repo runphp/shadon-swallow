@@ -234,7 +234,7 @@ class Application extends \Phalcon\Mvc\Application
      * @var string 
      */
     private $transmissionMode;
-   
+    
     /**
      * 注册标准模块.
      *
@@ -277,7 +277,7 @@ class Application extends \Phalcon\Mvc\Application
         }
         $data = $this->handle();
         //日志记录
-        $this->logging($data);
+        $this->logging($data, 'response');
         if($this->isTestVerify()){
             return json_encode($data);
         }
@@ -312,8 +312,7 @@ class Application extends \Phalcon\Mvc\Application
             }
             $defaultDi = $this->getDI();
             $request = $defaultDi->getRequest();
-            //var_dump($request->get());die();
-            $transmissionMode = $this->transmissionMode = $request->getHeader('Transmission-Mode') 
+            $this->transmissionMode = $transmissionMode = $request->getHeader('Transmission-Mode') 
                     ? $request->getHeader('Transmission-Mode') 
                     : $request->get('Transmission-Mode');
             $this->transmissionFrom = 
@@ -443,7 +442,7 @@ class Application extends \Phalcon\Mvc\Application
                     //模块调模块，不验证
                     if ($this->transmissionFrom != 'Module') {
                         //判断是否获取access_token 是则不验证
-                        if (! $this->isToGetToken) {
+                        if (! $this->isToGetToken && !$this->isTestVerify()) {
                             //验证权限
                             $isCheckLogin = $this->verifyPermissions($this->app, $class, $newArg['method'].$version, $isOld);
                             $isLogin == false && $isLogin = $isCheckLogin;
@@ -473,7 +472,7 @@ class Application extends \Phalcon\Mvc\Application
                 //模块调模块，不验证
                 if ($this->transmissionFrom != 'Module') {
                     //判断是否获取access_token 是则不验证
-                    if (! $this->isToGetToken && !$this->isTestVerify()) {
+                    if (! $this->isToGetToken) {
                         //验证权限
                         $isLogin = $this->verifyPermissions($this->app, $class, $this->method, $isOld);
                         $this->secret = self::$tokenConfig['token'];
@@ -485,7 +484,8 @@ class Application extends \Phalcon\Mvc\Application
 
             // 接口系统不再校验登录，只用作日志记录
             !empty($this->userLoginToken) && $this->verifyLogin(['user_login_token' => $this->userLoginToken]);
-
+            //记录本次服务的请求部分
+            $this->logging([]);
             // 过滤没有审核通过的接口  返回示例值
             if (APP_DEBUG) {
                 // 接口返回示例值的时间限制
@@ -794,6 +794,29 @@ class Application extends \Phalcon\Mvc\Application
             return;
         }
         $tokenInfo = self::$tokenConfig;
+        //生成唯一字符串用于标识一个完整的请求和响应
+        $uniqueStr = md5(implode(',', array_merge(self::$tokenConfig, $this->userLoginInfo, $this->requestParam)));
+        $nowTime = \Swallow\Toolkit\Util\Time::getSystemTiem(1);
+        $logData = [
+            'user_id' => $this->userLoginInfo['uid'],
+            'client_name' => $tokenInfo['app_name'],
+            'stage' => $stage,
+            'unique_str' => $uniqueStr,
+            'status' => isset($data['status']) ? $data['status'] : 0,
+            'access_token_info' => $tokenInfo,
+            'user_login_info' => $this->userLoginInfo,
+            'request_param' => $this->requestParam,
+            'return_data' => $data,
+            'exception_debug_info' => $this->debugInfo,
+            'strat_time' => 'request' == $stage ? $nowTime : 0,
+            'end_time' => 'response' == $stage ? $nowTime : 0,
+            'create_time' => time(),
+        ];
+        //进队列处理
+        $queueConf = $this->getDI()->getConfig()->queue->toArray();
+        $queue = new \Swallow\Queue\Queue(array('host' => $queueConf['host'], 'port' => $queueConf['port']));
+        $queue->setQueueName('serviceRequestLog')->send(['code' => 0, 'msg' => '', 'data'=>$logData]);
+        return ;
         unset($tokenInfo['app_auth']);
         $logger = $this->getDI()->getLogger();
 

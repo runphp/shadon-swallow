@@ -144,4 +144,16 @@ class Time
         // 返回n天后的中午12点
         return strtotime(date('Y-m-d 12:00:00', $time)) + 86400 * $days - 28800;
     }
+
+    /**
+     * 获取系统时间戳
+     *
+     * @param int $type 1微秒
+     * @author wangjiang<wangjiang@eelly.net>
+     * @since  2017-03-10
+     */
+    public static function getSystemTiem($type=null)
+    {
+        return 1 == $type ? microtime(true) : time();
+    }
 }
