@@ -792,7 +792,7 @@ class Application extends \Phalcon\Mvc\Application
             return;
         }
         $tokenInfo = self::$tokenConfig;
-        
+        return ;
         unset($tokenInfo['app_auth']);
         $logger = $this->getDI()->getLogger();
 
