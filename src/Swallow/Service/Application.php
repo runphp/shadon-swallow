@@ -716,8 +716,8 @@ class Application extends \Phalcon\Mvc\Application
                 || $this->userLoginInfo['dateline'] < time()) {
            return false;
         }
-        if (isset($this->userLoginInfo['user_id'])) {
-            $this->userLoginTokenUserId = $this->userLoginInfo['user_id'];
+        if (isset($this->userLoginInfo['uid'])) {
+            $this->userLoginTokenUserId = $this->userLoginInfo['uid'];
         }
 
         $this->getDI()->getShared('clientInfo')->setLoginUserInfo($this->userLoginInfo);
@@ -784,27 +784,29 @@ class Application extends \Phalcon\Mvc\Application
      * @emendator fenghaikun<fenghaikun@eelly.net>
      * @since  2015年12月14日
      */
-    private function logging(array $data)
+    private function logging(array $data, $stage = 'request')
     {
-        $this->handleStatus = $data['status'];
-        $this->handleInfo = $data['info'];
-        $this->handleRetval = $data['retval'];
+        $this->handleStatus = isset($data['status']) ? $data['status'] : 0;
+        $this->handleInfo = isset($data['info']) ? $data['info'] : '';
+        $this->handleRetval = isset($data['retval']) ? $data['retval'] :[];
         
         if (empty(self::$tokenConfig)) {
             return;
         }
         $tokenInfo = self::$tokenConfig;
+        $userLoginInfo = !empty($this->userLoginInfo) ? $this->userLoginInfo : [];
         //生成唯一字符串用于标识一个完整的请求和响应
-        $uniqueStr = md5(implode(',', array_merge(self::$tokenConfig, $this->userLoginInfo, $this->requestParam)));
-        $nowTime = \Swallow\Toolkit\Util\Time::getSystemTiem(1);
+        $uniqueStr = md5(implode(',', array_merge(self::$tokenConfig, $userLoginInfo, $this->requestParam)));
+        $nowTime = \Swallow\Toolkit\Util\Time::getSystemTime(1);
         $logData = [
-            'user_id' => $this->userLoginInfo['uid'],
+            'user_id' => isset($userLoginInfo['uid']) ? $userLoginInfo['uid'] : '',
             'client_name' => $tokenInfo['app_name'],
-            'stage' => $stage,
+            'client_version' => $this->clientVersion,
+            'client_user_type' => $this->clientUserType,
             'unique_str' => $uniqueStr,
             'status' => isset($data['status']) ? $data['status'] : 0,
             'access_token_info' => $tokenInfo,
-            'user_login_info' => $this->userLoginInfo,
+            'user_login_info' => $userLoginInfo,
             'request_param' => $this->requestParam,
             'return_data' => $data,
             'exception_debug_info' => $this->debugInfo,
@@ -812,10 +814,8 @@ class Application extends \Phalcon\Mvc\Application
             'end_time' => 'response' == $stage ? $nowTime : 0,
             'create_time' => time(),
         ];
-        //进队列处理
-        $queueConf = $this->getDI()->getConfig()->queue->toArray();
-        $queue = new \Swallow\Queue\Queue(array('host' => $queueConf['host'], 'port' => $queueConf['port']));
-        $queue->setQueueName('serviceRequestLog')->send(['code' => 0, 'msg' => '', 'data'=>$logData]);
+        //记录日志
+        \Api\Service\LogService::getInstance()->serviceRequestLog($logData);
         return ;
         unset($tokenInfo['app_auth']);
         $logger = $this->getDI()->getLogger();

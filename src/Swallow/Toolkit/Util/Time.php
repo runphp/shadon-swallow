@@ -152,7 +152,7 @@ class Time
      * @author wangjiang<wangjiang@eelly.net>
      * @since  2017-03-10
      */
-    public static function getSystemTiem($type=null)
+    public static function getSystemTime($type=null)
     {
         return 1 == $type ? microtime(true) : time();
     }
