@@ -234,7 +234,13 @@ class Application extends \Phalcon\Mvc\Application
      * @var string 
      */
     private $transmissionMode;
-    
+
+    /**
+     * 客户端ip地址
+     * @var string
+     */
+    private $clientAddress;
+
     /**
      * 注册标准模块.
      *
@@ -391,11 +397,16 @@ class Application extends \Phalcon\Mvc\Application
                     isset($this->requestDataDecrypt['device_number']) 
                     ? $this->requestDataDecrypt['device_number'] 
                     : '';
+            $this->clientAddress = $option['client_address'] =
+                    !empty($request->getClientAddress())
+                    ? $request->getClientAddress()
+                    : '';
             $this->getDI()->getShared('clientInfo')->setClearCache($clearCache)->setClientInfo([
                 'client_version' => $this->clientVersion,
                 'client_name' => $this->clientName,
                 'client_user_type' => $this->clientUserType,
                 'device_number' => $this->deviceNumber,
+                'client_address' => $this->clientAddress,
             ]);
 
             $this->isPhinx = in_array(strtolower($this->clientName), ['ios', 'android']) && (($this->clientUserType == 'buyer' && $this->clientVersion >= 430) || ($this->clientUserType == 'seller' && $this->clientVersion >= 220));
@@ -1020,6 +1031,17 @@ class Application extends \Phalcon\Mvc\Application
     private function isTestVerify()
     {
         return APP_DEBUG && $this->transmissionMode != 'Security';
+    }
+
+    /**
+     * 获取客户端ip地址
+     *
+     * @author wangjiang<wangjiang@eelly.net>
+     * @since  2017年3月29日
+     */
+    public function getClientAddress()
+    {
+        return $this->clientAddress;
     }
 
 }
