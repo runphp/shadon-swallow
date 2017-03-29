@@ -31,7 +31,7 @@ class ClientInfo
      * 
      * @var array
      */
-    private $clientInfo = ['client_name' => '', 'client_version' => '', 'client_user_type' => '', 'device_number' => ''];
+    private $clientInfo = ['client_name' => '', 'client_version' => '', 'client_user_type' => '', 'device_number' => '', 'client_address' => ''];
 
     private $userLoginInfo = ['uid' => ''];
     
