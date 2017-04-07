@@ -1,23 +1,34 @@
 <?php
-
 /*
  * PHP version 5.5
  *
- * @copyright  Copyright (c) 2012-2015 EELLY Inc. (http://www.eelly.com)
- * @link       http://www.eelly.com
- * @license    衣联网版权所有
+ * @copyright Copyright (c) 2012-2017 EELLY Inc. (http://www.eelly.com)
+ * @link http://www.eelly.com
+ * @license 衣联网版权所有
  */
 namespace Swallow\Mvc;
 
-use \Phalcon\Mvc\CollectionInterface;
+use Phalcon\Di;
+use Phalcon\Mvc\CollectionInterface;
+use Phalcon\Mvc\Collection as PhalconCollection;
+use Phalcon\Mvc\Collection\Document;
+use Phalcon\Mvc\Collection\Exception;
+use Swallow\Mongodb\Exception\MongoDuplicateKeyException;
+use MongoDB\BSON\ObjectID;
+use MongoDB\BSON\Unserializable;
+use MongoDB\Collection as AdapterCollection;
+use MongoDB\Driver\WriteConcern;
+use MongoDB\InsertOneResult;
+
 /**
- * mongo模块基类
+ * class Collection for MongoDB
  *
- * @author     SpiritTeam
- * @since      2015年8月13日
- * @version    1.0
+ * @property  \Phalcon\Mvc\Collection\ManagerInterface _modelsManager
+ * @author hehui<hehui@eelly.net>
+ * @since 2016年10月3日
+ * @version 1.0
  */
-class Collection extends \Phalcon\Mvc\Collection
+abstract class Collection extends PhalconCollection implements Unserializable
 {
 
     /**
@@ -66,46 +77,25 @@ class Collection extends \Phalcon\Mvc\Collection
     }
 
     /**
-     * 尝试多次链接，解决偶尔连不上mongo
-     *
-     * @param  array   $config
-     * @param  int     $times  重试次数
-     * @author chenjinggui<chenjinggui@eelly.net>
-     * @since  2015年6月12日
-     */
-    protected function retryMongo($config, $times = 3)
-    {
-        try {
-            return new \MongoClient($config['server'], $config['options']);
-        } catch (\MongoConnectionException $e) {
-        }
-        if ($times > 0) {
-            return $this->retryMongo($config, -- $times);
-        }
-
-        throw new \ErrorException('mongo service can not connect!'.json_encode($config));
-    }
-
-
-    /**
      * mongo库选择
      *
-     * @param string $db 库名
+     * @param string $db
+     *            databse name
      * @author hehui<hehui@eelly.net>
      * @since 2016年10月4日
      */
     protected function selectDb($db)
     {
         $di = $this->getDI();
-        if (! $di->has('mongo_' . $db)) {
-            $di->set('mongo_' . $db, function () use ($di, $db) {
-                $mongoClient = $di->get('mongo');
+        if (! $di->has('mongo_db_' . $db)) {
+            $di->set('mongo_db_' . $db, function () use ($di, $db) {
+                $mongoClient = $di->has('mongo_' . $db) ? $di->get('mongo_' . $db) : $di->get('mongo_default');
                 /* @var \MongoDB\Client $mongoClient */
                 $database = $mongoClient->selectDatabase($db);
                 return $database;
             }, true);
         }
-        return $this->setConnectionService('mongo_' . $db);
+        return $this->setConnectionService('mongo_db_' . $db);
     }
 
     /**
@@ -115,7 +105,7 @@ class Collection extends \Phalcon\Mvc\Collection
      * @param array $data
      * @return \Swallow\Mvc\Collection
      * @author hehui<hehui@eelly.net>
-     * @since  2016年10月5日
+     * @since 2016年10月5日
      */
     public static function hydrator(array $data = [])
     {
@@ -137,7 +127,7 @@ class Collection extends \Phalcon\Mvc\Collection
      * @param string $field
      * @return number|mixed
      * @author hehui<hehui@eelly.net>
-     * @since  2016年10月5日
+     * @since 2016年10月5日
      */
     public static function getMaxValue($field)
     {
@@ -158,12 +148,60 @@ class Collection extends \Phalcon\Mvc\Collection
 
     /**
      * (non-PHPdoc)
+     *
      * @see \Phalcon\Mvc\Collection::save()
      */
     public function save()
     {
+        $collection = $this->prepareCU();
+        $exists = $this->_exists($collection);
+        if (false === $exists) {
+            $this->_operationMade = self::OP_CREATE;
+        } else {
+            $this->_operationMade = self::OP_UPDATE;
+        }
+        /**
+         * The messages added to the validator are reset here
+         */
+        $this->_errorMessages = [];
+        $disableEvents = self::$_disableEvents;
+        /**
+         * Execute the preSave hook
+         */
+        if (false === $this->_preSave($this->_dependencyInjector, $disableEvents, $exists)) {
+            return false;
+        }
+        $data = $this->toArray();
+        /**
+         * We always use safe stores to get the success state
+         * Save the document
+         */
+        switch ($this->_operationMade) {
+            case self::OP_CREATE:
+                $status = $collection->insertOne($data);
+                break;
+            case self::OP_UPDATE:
+                $status = $collection->updateOne([
+                    '_id' => $this->_id
+                ], [
+                    '$set' => $this->toArray()
+                ]);
+                break;
+            default:
+                throw new Exception('Invalid operation requested for ' . __METHOD__);
+        }
+        $success = false;
+        if ($status->isAcknowledged()) {
+            $success = true;
+            if (false === $exists) {
+                $this->_id = $status->getInsertedId();
+            }
+        }
+        /**
+         * Call the postSave hooks
+         */
         try {
-            return $this->saveForMongoDb();
+            return $this->_postSave($disableEvents, $success, $exists);
         } catch (\MongoDB\Driver\Exception\BulkWriteException $e) {
             if (11000 == $e->getWriteResult()->getWriteErrors()[0]->getCode()) {
                 throw new MongoDuplicateKeyException($e->getMessage(), 11000, $e);
@@ -180,21 +218,37 @@ class Collection extends \Phalcon\Mvc\Collection
      */
     public static function findById($id)
     {
-        return self::findByIdForMongodb($id);
+        if (! is_object($id)) {
+            $classname = get_called_class();
+            $collection = new $classname();
+            /** @var Collection $collection */
+            if ($collection->getCollectionManager()->isUsingImplicitObjectIds($collection)) {
+                $mongoId = new ObjectID($id);
+            } else {
+                $mongoId = $id;
+            }
+        } else {
+            $mongoId = $id;
+        }
+        return static::findFirst([
+            [
+                "_id" => $mongoId
+            ]
+        ]);
     }
 
     /**
      *
-     *
-     *
      * @param array $parameters
      * @author hehui<hehui@eelly.net>
-     * @since  2017年3月14日
+     * @since 2017年3月14日
      */
     public static function aggregate(array $parameters = null)
     {
         $result = parent::aggregate($parameters);
-        $return = ['result' => $result->toArray()];
+        $return = [
+            'result' => $result->toArray()
+        ];
         return $return;
     }
 
@@ -205,7 +259,54 @@ class Collection extends \Phalcon\Mvc\Collection
      */
     public function delete()
     {
-        return $this->deleteForMongodb();
+        if (! $id = $this->_id) {
+            throw new Exception("The document cannot be deleted because it doesn't exist");
+        }
+        $disableEvents = self::$_disableEvents;
+        if (! $disableEvents) {
+            if (false === $this->fireEventCancel("beforeDelete")) {
+                return false;
+            }
+        }
+        if (true === $this->_skipped) {
+            return true;
+        }
+        $connection = $this->getConnection();
+        $source = $this->getSource();
+        if (empty($source)) {
+            throw new Exception("Method getSource() returns empty string");
+        }
+        /**
+         * Get the Collection
+         *
+         * @var AdapterCollection $collection
+         */
+        $collection = $connection->selectCollection($source);
+        if (is_object($id)) {
+            $mongoId = $id;
+        } else {
+            if ($this->_modelsManager->isUsingImplicitObjectIds($this)) {
+                $mongoId = new ObjectID($id);
+            } else {
+                $mongoId = $id;
+            }
+        }
+        $success = false;
+        /**
+         * Remove the instance
+         */
+        $status = $collection->deleteOne([
+            '_id' => $mongoId
+        ], [
+            'w' => true
+        ]);
+        if ($status->isAcknowledged()) {
+            $success = true;
+            if (! $disableEvents) {
+                $this->fireEvent("afterDelete");
+            }
+        }
+        return $success;
     }
 
     /**
@@ -215,19 +316,15 @@ class Collection extends \Phalcon\Mvc\Collection
      */
     public function setId($id)
     {
-        if ('object' != gettype($id)) {
-            /**
-             * Check if the model use implicit ids
-             */
-            if ($this->_modelsManager->isUsingImplicitObjectIds($this)) {
-                $mongoId = new \MongoDB\BSON\ObjectID($id);
-            } else {
-                $mongoId = $id;
-            }
-        } else {
-            $mongoId = $id;
+        if (is_object($id)) {
+            $this->_id = $id;
+            return;
         }
-        $this->_id = $mongoId;
+        if ($this->_modelsManager->isUsingImplicitObjectIds($this)) {
+            $this->_id = new ObjectID($id);
+            return;
+        }
+        $this->_id = $id;
     }
 
     /**
@@ -235,7 +332,7 @@ class Collection extends \Phalcon\Mvc\Collection
      *
      * @return \MongoDB\Collection
      * @author hehui<hehui@eelly.net>
-     * @since  2017年3月23日
+     * @since 2017年3月23日
      */
     public static function getCollection()
     {
@@ -245,38 +342,98 @@ class Collection extends \Phalcon\Mvc\Collection
     }
 
     /**
-     * Returns a collection resultset
      *
-     * @param array params
-     * @param \Phalcon\Mvc\Collection collection
-     * @param \MongoDb connection
-     * @param boolean unique
-     * @return array
+     *
+     * (non-PHPdoc)
+     *
+     * @see \Phalcon\Mvc\Collection::summatory()
+     * @param string $field
+     * @param mixed $conditions
+     * @param mixed $finalize
+     * @throws Exception
+     * @author hehui<hehui@eelly.net>
+     * @since 2017年4月6日
      */
-    protected static function _getResultset($params, CollectionInterface $collection, $connection, $unique)
+    public static function summatory($field, $conditions = null, $finalize = null)
     {
-        return self::_getResultsetForMongoDb($params, $collection, $connection, $unique);
+        throw new Exception('The summatory() method is not implemented in the new Mvc Collection');
+    }
+
+    public function create()
+    {
+        /* @var AdapterCollection $collection */
+        $collection = $this->prepareCU();
+        /**
+         * Check the dirty state of the current operation to update the current operation
+         */
+        $this->_operationMade = self::OP_CREATE;
+        /**
+         * The messages added to the validator are reset here
+         */
+        $this->_errorMessages = [];
+        /**
+         * Execute the preSave hook
+         */
+        if ($this->_preSave($this->_dependencyInjector, self::$_disableEvents, false) === false) {
+            return false;
+        }
+        $data = $this->toArray();
+        $success = false;
+        /**
+         * We always use safe stores to get the success state
+         * Save the document
+         */
+        $result = $collection->insert($data, [
+            'writeConcern' => new WriteConcern(1)
+        ]);
+        if ($result instanceof InsertOneResult && $result->getInsertedId()) {
+            $success = true;
+            $this->_id = $result->getInsertedId();
+        }
+        /**
+         * Call the postSave hooks
+         */
+        return $this->_postSave(self::$_disableEvents, $success, false);
+    }
+
+    /**
+     *
+     * @param array $data
+     * @author hehui<hehui@eelly.net>
+     * @since 2017年4月6日
+     */
+    public function bsonUnserialize(array $data)
+    {
+        $this->setDI(Di::getDefault());
+        $this->_modelsManager = Di::getDefault()->getShared('collectionManager');
+        foreach ($data as $key => $val) {
+            $this->{$key} = $val;
+        }
+        if (method_exists($this, "afterFetch")) {
+            $this->afterFetch();
+        }
     }
 
     /**
      * (non-PHPdoc)
-     * @see \Phalcon\Mvc\Collection::_exists()
+     *
+     * @see \Phalcon\Mvc\Collection::_exists() @codingStandardsIgnoreStart
      */
     protected function _exists($collection)
     {
-        if (!isset($this->_id)) {
+        // @codingStandardsIgnoreEnd
+        if (! $id = $this->_id) {
             return false;
-        } else {
-            $id = $this->_id;
         }
-        if ('object' == gettype($this->_id)) {
+
+        if (is_object($id)) {
             $mongoId = $id;
         } else {
             /**
              * Check if the model use implicit ids
              */
             if ($this->_modelsManager->isUsingImplicitObjectIds($this)) {
-                $mongoId = new \MongoDB\BSON\ObjectID($id);
+                $mongoId = new ObjectID($id);
             } else {
                 $mongoId = $id;
             }
@@ -284,17 +441,20 @@ class Collection extends \Phalcon\Mvc\Collection
         /**
          * Perform the count using the function provided by the driver
          */
-        return $this->count([["_id" => $mongoId]]) > 0;
+        return $collection->count([
+            "_id" => $mongoId
+        ]) > 0;
     }
 
     /**
      * (non-PHPdoc)
+     *
      * @see \Phalcon\Mvc\Collection::prepareCU()
      */
     protected function prepareCU()
     {
         $dependencyInjector = $this->_dependencyInjector;
-        if ('object' != gettype($dependencyInjector)) {
+        if (! is_object($dependencyInjector)) {
             throw new Exception("A dependency injector container is required to obtain the services related to the ODM");
         }
         $source = $this->getSource();
@@ -312,235 +472,110 @@ class Collection extends \Phalcon\Mvc\Collection
     /**
      * Returns a collection resultset for mongodb
      *
-     * @param array params
-     * @param \Phalcon\Mvc\Collection collection
-     * @param \MongoDb connection
-     * @param boolean unique
-     * @return array
+     * @param array $params
+     * @param CollectionInterface $collection
+     * @param \MongoDB\Database $connection
+     * @param bool $unique
+     * @throws Exception
+     * @return mixed|unknown[]
+     * @author hehui<hehui@eelly.net>
+     * @since 2017年4月6日
      */
-    private static function _getResultsetForMongoDb($params, CollectionInterface $collection, $connection, $unique)
+    protected static function _getResultset($params, CollectionInterface $collection, $connection, $unique)
     {
         /**
+         * @codingStandardsIgnoreEnd
          * Check if "class" clause was defined
          */
         if (isset($params['class'])) {
-            $className =$params['class'];
-            $base = new $className();
-            if (!($base instanceof CollectionInterface || $base instanceof Document)) {
-                throw new Exception("Object of class '" . $className . "' must be an implementation of Phalcon\\Mvc\\CollectionInterface or an instance of Phalcon\\Mvc\\Collection\\Document");
+            $classname = $params['class'];
+            $base = new $classname();
+
+            if (! $base instanceof CollectionInterface || $base instanceof Document) {
+                throw new Exception(sprintf('Object of class "%s" must be an implementation of %s or an instance of %s', get_class($base), CollectionInterface::class, Document::class));
             }
         } else {
             $base = $collection;
         }
+
         $source = $collection->getSource();
         if (empty($source)) {
             throw new Exception("Method getSource() returns empty string");
         }
+        /**
+         *
+         * @var \MongoDB\Collection $mongoCollection
+         */
         $mongoCollection = $connection->selectCollection($source);
-        if ('object' != gettype($mongoCollection)) {
+        if (! is_object($mongoCollection)) {
             throw new Exception("Couldn't select mongo collection");
+        }
+        $conditions = [];
+        if (isset($params[0]) || isset($params['conditions'])) {
+            $conditions = (isset($params[0])) ? $params[0] : $params['conditions'];
         }
         /**
          * Convert the string to an array
          */
-        if (isset($params['conditions'])) {
-            $conditions = $params['conditions'];
-        } elseif (isset($params[0])) {
-            $conditions = $params[0];
-        } else {
-            $conditions = [];
-        }
-
-        if ('array' != gettype($conditions)) {
+        if (! is_array($conditions)) {
             throw new Exception("Find parameters must be an array");
         }
-
         $options = [];
-
-        /**
-         * Perform the find
-         */
-        if (isset($params["fields"])) {
-            $options['projection'] = $params["fields"];
-        }
-
         /**
          * Check if a "limit" clause was defined
          */
-        if (isset($params["limit"])) {
-            $options['limit'] = $params["limit"];
+        if (isset($params['limit'])) {
+            $limit = $params['limit'];
+            $options['limit'] = (int) $limit;
+            if ($unique) {
+                $options['limit'] = 1;
+            }
         }
-
         /**
          * Check if a "sort" clause was defined
          */
-        if (isset($params["sort"])) {
-            $options['sort'] = $params["sort"];
+        if (isset($params['sort'])) {
+            $sort = $params["sort"];
+            $options['sort'] = $sort;
         }
-
         /**
          * Check if a "skip" clause was defined
          */
-        if (isset($params["skip"])) {
-            $options['skip'] = $params["skip"];
+        if (isset($params['skip'])) {
+            $skip = $params["skip"];
+            $options['skip'] = (int) $skip;
         }
-        $documentsCursor = $mongoCollection->find($conditions, $options);
-        $it = new \IteratorIterator($documentsCursor);
-        if (true === $unique) {
-            $it->rewind();
-
-            /**
-             * Requesting a single result
-             */
-            $document = $it->current();
-            if ($document instanceof \MongoDB\Model\BSONDocument) {
-
-                /**
-                 * Assign the values to the base object
-                 */
-                return static::cloneResult($base, $document->getArrayCopy());
-            } else {
-                return false;
+        if (isset($params['fields']) && is_array($params['fields']) && ! empty($params['fields'])) {
+            $options['projection'] = [];
+            foreach ($params['fields'] as $key => $show) {
+                $options['projection'][$key] = $show;
             }
         }
+        /**
+         * Perform the find
+         */
+        $cursor = $mongoCollection->find($conditions, $options);
 
+        $cursor->setTypeMap([
+            'root' => get_class($base),
+            'document' => 'array'
+        ]);
+        if (true === $unique) {
+            /**
+             * Looking for only the first result.
+             */
+            return current($cursor->toArray());
+        }
         /**
          * Requesting a complete resultset
          */
         $collections = [];
-        $it->rewind();
-        while($document = $it->current()) {
-            $collections[] = static::cloneResult($base, $document->getArrayCopy());
-            $it->next();
+        foreach ($cursor as $document) {
+            /**
+             * Assign the values to the base object
+             */
+            $collections[] = $document;
         }
-
         return $collections;
-    }
-
-    /**
-     * Creates/Updates a collection based on the values in the attributes
-     *
-     * @author hehui<hehui@eelly.net>
-     * @since 2017年3月13日
-     */
-    private function saveForMongoDb()
-    {
-        /*@var \MongoDB\Collection $collection */
-        $collection = $this->prepareCU();
-
-        /**
-         * Check the dirty state of the current operation to update the current operation
-         */
-        $exists = $this->_exists($collection);
-
-        /**
-         * The messages added to the validator are reset here
-         */
-        $this->_errorMessages = [];
-
-        /**
-         * Execute the preSave hook
-         */
-        if ($this->_preSave($this->_dependencyInjector, self::$_disableEvents, $exists) === false) {
-            return false;
-        }
-
-        $data = $this->toArray();
-        $success = true;
-
-        if ($exists) {
-            $collection->updateOne([ '_id' => $this->_id ], [ "\$set" => $data ])->getModifiedCount();
-        } else {
-            $this->_id = $collection->insertOne($data)->getInsertedId();
-        }
-
-        /**
-         * Call the postSave hooks
-         */
-        return $this->_postSave(self::$_disableEvents, $success, $exists);
-    }
-
-    /**
-     * Find a document by its id (_id)
-     *
-     *
-     * @param unknown $id
-     * @author hehui<hehui@eelly.net>
-     * @since  2017年3月13日
-     */
-    private static function findByIdForMongodb($id)
-    {
-        if ('object' != gettype($id)) {
-            if (! preg_match("/^[a-f\d]{24}$/i", $id)) {
-                return null;
-            }
-            $className = get_called_class();
-            $collection = new $className();
-            /**
-             * Check if the model use implicit ids
-             */
-            if ($collection->getCollectionManager()->isUsingImplicitObjectIds($collection)) {
-                $mongoId = new \MongoDB\BSON\ObjectID($id);
-            } else {
-                $mongoId = $id;
-            }
-        } else {
-            $mongoId = $id;
-        }
-        return static::findFirst([ [ "_id" => $mongoId ] ]);
-    }
-
-    /**
-     *
-     *
-     *
-     * @author hehui<hehui@eelly.net>
-     * @since  2017年3月14日
-     */
-    private function deleteForMongodb()
-    {
-        if (isset($this->_id)) {
-            $id = $this->_id;
-        } else {
-            throw new Exception("The document cannot be deleted because it doesn't exist");
-        }
-        $disableEvents = self::$_disableEvents;
-        if (!$disableEvents) {
-            if (false === $this->fireEventCancel('beforeDelete')) {
-                return false;
-            }
-        }
-        if (true === $this->_skipped) {
-            return true;
-        }
-        $connection = $this->getConnection();
-        $source = $this->getSource();
-        if (empty($source)) {
-            throw new Exception("Method getSource() returns empty string");
-        }
-        /**
-         * Get the \MongoCollection
-         */
-        $collection = $connection->selectCollection($source);
-
-        if ('object' == gettype($id)) {
-            $mongoId = $id;
-        } else {
-            /**
-             * Is the collection using implicit object Ids?
-             */
-            if($this->_modelsManager->isUsingImplicitObjectIds($this)){
-                $mongoId = new \MongoDB\BSON\ObjectID($id);
-            }else {
-                $mongoId = $id;
-            }
-        }
-        $success = true;
-        /* @var MongoDB/Collection $collection */
-        $collection->findOneAndDelete([ '_id' => $mongoId ]);
-        if (! $disableEvents) {
-            $this->fireEvent("afterDelete");
-        }
-        return $success;
     }
 }
