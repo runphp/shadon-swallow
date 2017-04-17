@@ -242,6 +242,12 @@ class Application extends \Phalcon\Mvc\Application
     private $clientAddress;
 
     /**
+     * sessionId
+     * @var string
+     */
+    private $sessionId;
+
+    /**
      * 注册标准模块.
      *
      * 自动把模块名转为下面格式
@@ -401,12 +407,17 @@ class Application extends \Phalcon\Mvc\Application
                     !empty($request->getClientAddress())
                     ? $request->getClientAddress()
                     : '';
+            $this->sessionId = $option['session_id'] =
+                    isset($this->requestDataDecrypt['session_id'])
+                    ? $this->requestDataDecrypt['session_id']
+                    : '';
             $this->getDI()->getShared('clientInfo')->setClearCache($clearCache)->setClientInfo([
                 'client_version' => $this->clientVersion,
                 'client_name' => $this->clientName,
                 'client_user_type' => $this->clientUserType,
                 'device_number' => $this->deviceNumber,
                 'client_address' => $this->clientAddress,
+                'session_id' => $this->sessionId,
             ]);
 
             $this->isPhinx = in_array(strtolower($this->clientName), ['ios', 'android']) && (($this->clientUserType == 'buyer' && $this->clientVersion >= 430) || ($this->clientUserType == 'seller' && $this->clientVersion >= 220));
@@ -718,8 +729,8 @@ class Application extends \Phalcon\Mvc\Application
         }
 
         // 获取登录缓存信息
-        $cache = $this->getDI()->get('Api\\Lib\\Cache\\DefaultCache', [])->getLoginCache();
-        $this->userLoginInfo = $cache->get($loginData['user_login_token']);
+        $cache = $this->getDI()->get('Api\\Lib\\Cache\\DefaultCache', [])->getRedisCache();
+        $this->userLoginInfo = $cache->hGetAll('UserLoginTokenInfo:'.$loginData['user_login_token']);
         if (empty($this->userLoginInfo) 
                 || ! isset($this->userLoginInfo['dateline']) 
                 || $this->userLoginInfo['dateline'] < time()) {
@@ -1044,4 +1055,14 @@ class Application extends \Phalcon\Mvc\Application
         return $this->clientAddress;
     }
 
+    /**
+     * 获取sessionId
+     *
+     * @author wangjiang<wangjiang@eelly.net>
+     * @since  2017年4月14日
+     */
+    public function getSessionId()
+    {
+        return $this->sessionId;
+    }
 }
