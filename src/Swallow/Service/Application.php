@@ -293,6 +293,13 @@ class Application extends \Phalcon\Mvc\Application
         if($this->isTestVerify()){
             return json_encode($data);
         }
+        if(!empty($this->encryptVersion) && $this->encryptVersion == 'v2'){
+            $signData = $data;
+            ksort($signData);
+            $checkSign = md5(http_build_query($signData).$this->isToGetToken);
+            $data['sign'] = $checkSign;
+            return json_encode($data);
+        }
         $retval = $signature = '';
         if ($data['status'] == 200) {
             $this->isPhinx || $data['retval'] = Arrays::toString($data['retval']);
@@ -342,7 +349,18 @@ class Application extends \Phalcon\Mvc\Application
                 $res = \Api\Logic\CredentialLogic::getInstance()->verifyAccessToken($this->transmissionFrom);
                 self::$tokenConfig = $res['data'];
             }
-            if ($this->transmissionMode == 'Security') {
+            if($this->transmissionMode == 'Security' && $transmissionVersion == 'v2'){
+                $this->requestData = $this->requestDataDecrypt = $request->getPost() ? $request->getPost() : $request->get();
+                if ($this->verifyV2Param($this->requestData) == false) {
+                    $this->debugInfo = '验证verify == false,解码data有问题';
+                    throw new LogicException("Request parameter error, or decryption failure!", StatusCode::SERVICE_BAD_REQUEST);
+                }
+                if ($this->verifyV2Sign($this->requestData) == false) {
+                    $this->debugInfo = '签名verify == false,解码data有问题';
+                    throw new LogicException("Request Sign error", StatusCode::SERVICE_BAD_REQUEST);
+                }
+                $this->encrypt = false;
+            }else if ($this->transmissionMode == 'Security') {
                 // 如果启用加密安全传输
                 $this->requestData = $this->transmissionMode == 'Security' ? $request->get('data') : $request->getPost('data');
                 $this->requestDataDecrypt = $this->decode($this->requestData, $this->transmissionFrom, $transmissionVersion); // 解码
@@ -791,7 +809,7 @@ class Application extends \Phalcon\Mvc\Application
         $this->desCrypt = new \Swallow\Toolkit\Encrypt\DesCrypt($key, $iv);
         $length = strlen($data) - 14;
         $decodeData = substr($data, 8, $length);
-        !empty($transmissionVersion) && $transmissionVersion == 'v2' && $decodeData = base64_decode($decodeData);
+        //!empty($transmissionVersion) && $transmissionVersion == 'v2' && $decodeData = base64_decode($decodeData);
         $data = json_decode($this->desCrypt->decrypt($decodeData), true);
         return $data;
     }
@@ -1064,5 +1082,41 @@ class Application extends \Phalcon\Mvc\Application
     public function getSessionId()
     {
         return $this->sessionId;
+    }
+    
+    /**
+     * 验证v2加密参数
+     *
+     * @param array $params
+     * @return boolean
+     * @author 李伟权   <liweiquan@eelly.net>
+     * @since 2017年3月12日
+     */
+    private function verifyV2Param($params)
+    {      
+        if (!$this->verifyParam($params) || empty($params['sign'])) {
+            return false;
+        }
+        return true;
+    }
+    
+    /**
+     * 验证v2加密签名
+     *
+     * @param array $params
+     * @return boolean
+     * @author 李伟权   <liweiquan@eelly.net>
+     * @since 2017年3月12日
+     */
+    private function verifyV2Sign($params)
+    {
+        $sign = $params['sign'];
+        unset($params['sign']);
+        ksort($params);
+        $checkSign = md5(http_build_query($params).$this->isToGetToken);
+        if($sign != $checkSign){
+            return false;
+        }
+        return true;
     }
 }
