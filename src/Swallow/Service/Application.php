@@ -1111,7 +1111,7 @@ class Application extends \Phalcon\Mvc\Application
         $sign = $params['sign'];
         unset($params['sign']);
         ksort($params);
-        $checkSign = md5(json_encode($params).$this->isToGetToken);
+        $checkSign = md5(json_encode(array_keys($params)).$this->isToGetToken);
         if($sign != $checkSign){
             return false;
         }
