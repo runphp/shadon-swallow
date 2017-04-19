@@ -293,24 +293,22 @@ class Application extends \Phalcon\Mvc\Application
         if($this->isTestVerify()){
             return json_encode($data);
         }
-        if(!empty($this->encryptVersion) && $this->encryptVersion == 'v2'){
-            $signData = $data;
-            ksort($signData);
-            $checkSign = md5(http_build_query($signData).$this->isToGetToken);
-            $data['sign'] = $checkSign;
-            return json_encode($data);
-        }
         $retval = $signature = '';
         if ($data['status'] == 200) {
             $this->isPhinx || $data['retval'] = Arrays::toString($data['retval']);
             $retval = $data['retval'];
-            if ($this->encrypt && $this->desCrypt != null) {
-                $retval = json_encode($retval);
-                $retval = $this->desCrypt->encrypt($retval);
-                !empty($this->encryptVersion) && $this->encryptVersion == 'v2' && $retval = base64_encode($retval);
-            }
             //生成签名
             $signature = $this->signature(json_encode($retval));
+            if(!empty($this->encryptVersion) && $this->encryptVersion == 'v2'){
+                $signData = $data;
+                ksort($signData);
+                $checkSign = md5(json_encode($signData).$this->isToGetToken);
+                $signature = $checkSign;
+            }else if ($this->encrypt && $this->desCrypt != null) {
+                $retval = json_encode($retval);
+                $retval = $this->desCrypt->encrypt($retval);
+                //!empty($this->encryptVersion) && $this->encryptVersion == 'v2' && $retval = base64_encode($retval);
+            }
         }
         $data['retval'] = ['data' => $retval, 'signature' => $signature];
         if (is_object($eventsManager)) {
@@ -1113,7 +1111,7 @@ class Application extends \Phalcon\Mvc\Application
         $sign = $params['sign'];
         unset($params['sign']);
         ksort($params);
-        $checkSign = md5(http_build_query($params).$this->isToGetToken);
+        $checkSign = md5(json_encode($params).$this->isToGetToken);
         if($sign != $checkSign){
             return false;
         }
