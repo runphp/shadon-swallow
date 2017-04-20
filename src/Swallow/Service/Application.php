@@ -297,8 +297,6 @@ class Application extends \Phalcon\Mvc\Application
         if ($data['status'] == 200) {
             $this->isPhinx || $data['retval'] = Arrays::toString($data['retval']);
             $retval = $data['retval'];
-            //生成签名
-            $signature = $this->signature(json_encode($retval));
             if(!empty($this->encryptVersion) && $this->encryptVersion == 'v2'){
                 $signData = $data;
                 ksort($signData);
@@ -307,6 +305,8 @@ class Application extends \Phalcon\Mvc\Application
             }else if ($this->encrypt && $this->desCrypt != null) {
                 $retval = json_encode($retval);
                 $retval = $this->desCrypt->encrypt($retval);
+                //生成签名
+                $signature = $this->signature(json_encode($retval));
                 //!empty($this->encryptVersion) && $this->encryptVersion == 'v2' && $retval = base64_encode($retval);
             }
         }
