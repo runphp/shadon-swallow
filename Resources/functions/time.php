@@ -21,3 +21,26 @@ if (! function_exists('milliseconds')) {
         return (int)round(microtime(true) * 1000);
     }
 }
+
+if (!function_exists('mongoDate')) {
+    /**
+     * MongoDB\BSON\UTCDateTime.
+     *
+     *
+     * @param int $milliseconds
+     *
+     * @return \MongoDB\BSON\UTCDateTime
+     *
+     * @author hehui<hehui@eelly.net>
+     *
+     * @since 2017年4月20日
+     */
+    function mongoDate($milliseconds = null)
+    {
+        if (null === $milliseconds) {
+            $milliseconds = milliseconds();
+        }
+
+        return new \MongoDB\BSON\UTCDateTime($milliseconds);
+    }
+}
