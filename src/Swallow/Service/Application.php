@@ -348,7 +348,9 @@ class Application extends \Phalcon\Mvc\Application
                 self::$tokenConfig = $res['data'];
             }
             if($this->transmissionMode == 'Security' && $transmissionVersion == 'v2'){
-                $this->requestData = $this->requestDataDecrypt = $request->getPost() ? $request->getPost() : $request->get();
+                $content = file_get_contents("php://input");
+                $this->requestData = $this->requestDataDecrypt = json_decode($content,true);
+                $this->requestDataDecrypt['args'] = $this->requestData['args'] = json_encode($this->requestDataDecrypt['args']);
                 if ($this->verifyV2Param($this->requestData) == false) {
                     $this->debugInfo = '验证verify == false,解码data有问题';
                     throw new LogicException("Request parameter error, or decryption failure!", StatusCode::SERVICE_BAD_REQUEST);
