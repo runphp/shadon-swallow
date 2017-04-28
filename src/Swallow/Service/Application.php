@@ -503,11 +503,13 @@ class Application extends \Phalcon\Mvc\Application
                     $isOld = true;
                 }
                 //newmall的接口在非DEBUG模式下才校验
-                if (! $isOld && !APP_DEBUG) {
+                if (! $isOld) {
                     $logicName = str_replace('\\Service\\', '\\Logic\\', $class);
                     $logicName = preg_replace('/Service$/', 'Logic', $logicName);
-                    $this->verifyClass($class, $logicName); //验证类
-                    $this->verifyMethod($logicName, $this->method); //验证方法
+                    if(!APP_DEBUG){
+                        $this->verifyClass($class, $logicName); //验证类
+                        $this->verifyMethod($logicName, $this->method); //验证方法
+                    }
                 }
 
                 //模块调模块，不验证
