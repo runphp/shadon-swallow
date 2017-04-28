@@ -502,7 +502,8 @@ class Application extends \Phalcon\Mvc\Application
                     ! empty($this->client) && $class = str_replace('\\Service\\', '\\Service\\' . $this->client . '\\', $class);
                     $isOld = true;
                 }
-                if (! $isOld) {
+                //newmall的接口在非DEBUG模式下才校验
+                if (! $isOld && !APP_DEBUG) {
                     $logicName = str_replace('\\Service\\', '\\Logic\\', $class);
                     $logicName = preg_replace('/Service$/', 'Logic', $logicName);
                     $this->verifyClass($class, $logicName); //验证类
