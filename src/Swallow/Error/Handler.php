@@ -119,7 +119,7 @@ class Handler
                 $logger->setFormatter($formatter);
             }
         } else {
-            $logger->setFormatter(new FormatterLine('[%date%][%type%] %message%', 'Y-m-d H:i:s O'));
+            $logger->setFormatter(new FormatterLine('[%date%][%type%] %message%', 'Y-m-d H:i:s'));
         }
         $logger->log(static::getLogType($error->type()), $message);
         switch ($error->type()) {
