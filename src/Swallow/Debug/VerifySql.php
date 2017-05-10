@@ -91,7 +91,7 @@ class VerifySql implements \Phalcon\Di\InjectionAwareInterface
             $called = $backtrace[13];
         }
         !isset($called['class']) && $called = $backtrace[9];
-        $called['class'] == 'Swallow\Service\LogicProxy' && $called = $backtrace[7];
+        $called['class'] == 'Swallow\Service\LogicProxy' && $called = $backtrace[8];
         $module = explode('\\', $called['class']);
         $module = strtolower($module[0]);
         $file = ROOT_PATH . '/application/' . $module . '/config/' . APPLICATION_ENV . '/table.php';
