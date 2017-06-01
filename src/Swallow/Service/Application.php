@@ -381,8 +381,8 @@ class Application extends \Phalcon\Mvc\Application
             }
             //转换参数
             $isMore = true;
-            if ($this->requestDataDecrypt['service_name'] != "Base\\Service\\ClientService" 
-                    && $this->requestDataDecrypt['method'] != 'curlMoreReqMallService'){
+            if (!($this->requestDataDecrypt['service_name'] == "Base\\Service\\ClientService" 
+                    && $this->requestDataDecrypt['method'] == 'curlMoreReqMallService')){
                 $isMore = false;
             }
 
