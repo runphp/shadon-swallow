@@ -304,7 +304,9 @@ class Application extends \Phalcon\Mvc\Application
         if ($data['status'] == 200) {
             $this->isPhinx || $data['retval'] = Arrays::toString($data['retval']);
             $retval = $data['retval'];
-            if(!empty($this->encryptVersion) && $this->encryptVersion == 'v2'){
+            if ($this->isRemoveEncrypt) {
+                $signature = ''; // TODO
+            }else if(!empty($this->encryptVersion) && $this->encryptVersion == 'v2'){
                 $signData = $data;
                 ksort($signData);
                 $checkSign = md5(json_encode($signData).$this->isToGetToken);
