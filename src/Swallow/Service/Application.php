@@ -317,7 +317,12 @@ class Application extends \Phalcon\Mvc\Application
                 //!empty($this->encryptVersion) && $this->encryptVersion == 'v2' && $retval = base64_encode($retval);
             }
         }
-        $data['retval'] = ['data' => $retval, 'signature' => $signature];
+        if ($this->isRemoveEncrypt) {
+            $data['data'] = $retval;
+            $data['signature'] = $signature;
+        }else{
+            $data['retval'] = ['data' => $retval, 'signature' => $signature];
+        }
         if (is_object($eventsManager)) {
             $eventsManager->fire("application:afterBootstrap", $this);
         }
