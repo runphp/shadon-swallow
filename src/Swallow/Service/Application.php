@@ -110,128 +110,128 @@ class Application extends \Phalcon\Mvc\Application
      * 是否【手机端】且【凤凰或以后的版本】
      */
     private $isPhinx = false;
-    
+
     /**
      * 加密版本  （空为默认加密方式   v2:3des加密后再base64加密）
      */
     private $encryptVersion = '';
-    
+
     /**
      * 原始请求数据
      *
      * @var string
      */
     private $requestData;
-    
+
     /**
      * 解密请求数据
      *
      * @var string
      */
     private $requestDataDecrypt;
-    
+
     /**
      * 系统名
      *
      * @var string
      */
     private $app;
-    
+
     /**
      * 服务类名
      *
      * @var string
      */
     private $serviceName;
-    
+
     /**
      * 服务方法名
      *
      * @var string
      */
     private $method;
-    
+
     /**
      * 方法参数
      *
      * @var string
      */
     private $args;
-    
+
     /**
      * 客户端用户名。参考[这里](http://servicemanage.eelly.test/common/account)
      *
      * @var string
      */
     private $clientName;
-    
+
     /**
      * 客户端版本
      *
      * @var string
      */
     private $clientVersion;
-    
-    
+
+
     /**
      * 客户端类型。seller, buyer
      *
      * @var string
      */
     private $clientUserType;
-    
+
     /**
      * 客户端设备ID。针对移动端，可为空
      *
      * @var string
      */
     private $deviceNumber;
-    
+
     /**
      * 接口的access_token
      *
      * @var string
      */
     private $transmissionFrom;
-    
+
     /**
      * 终端用户（个人账号）登录的token
      *
      * @var string
      */
     private $userLoginToken;
-    
+
     /**
      * user_login_token对应的user_id
      *
      * @var string
      */
     private $userLoginTokenUserId;
-    
+
     /**
      * 处理结果状态码
      *
-     * @var string 
+     * @var string
      */
     private $handleStatus;
-    
+
     /**
      * 处理结果提示
      *
-     * @var string 
+     * @var string
      */
     private $handleInfo;
-    
+
     /**
      * 处理结果数据
      *
-     * @var array 
+     * @var array
      */
     private $handleRetval;
-    
+
     /**
      * 数据模式
-     * @var string 
+     * @var string
      */
     private $transmissionMode;
 
@@ -246,6 +246,13 @@ class Application extends \Phalcon\Mvc\Application
      * @var string
      */
     private $sessionId;
+
+    /**
+     * 是否移除加密.
+     *
+     * @var bool
+     */
+    private $isRemoveEncrypt = false;
 
     /**
      * 注册标准模块.
@@ -328,13 +335,14 @@ class Application extends \Phalcon\Mvc\Application
                 }
             }
             $defaultDi = $this->getDI();
+            /* @var \Phalcon\Http\Request $request */
             $request = $defaultDi->getRequest();
-            $this->transmissionMode = $request->getHeader('Transmission-Mode') 
-                    ? $request->getHeader('Transmission-Mode') 
+            $this->transmissionMode = $request->getHeader('Transmission-Mode')
+                    ? $request->getHeader('Transmission-Mode')
                     : $request->get('Transmission-Mode');
-            $this->transmissionFrom = 
-                    $request->getHeader('Transmission-From') 
-                    ? $request->getHeader('Transmission-From') 
+            $this->transmissionFrom =
+                    $request->getHeader('Transmission-From')
+                    ? $request->getHeader('Transmission-From')
                     : $request->get('Transmission-From');
             $transmissionToken = $request->getHeader('Transmission-Token');
             $transmissionVersion = $request->getHeader('Transmission-Version');
@@ -372,7 +380,7 @@ class Application extends \Phalcon\Mvc\Application
                 $this->encrypt = true;
             } else {
                 if (APP_DEBUG) {
-                    $this->requestData = $this->requestDataDecrypt = 
+                    $this->requestData = $this->requestDataDecrypt =
                             $request->getPost() ? $request->getPost() : $request->get();
                     $this->encrypt = false;
                 } else {
@@ -381,7 +389,7 @@ class Application extends \Phalcon\Mvc\Application
             }
             //转换参数
             $isMore = true;
-            if (!($this->requestDataDecrypt['service_name'] == "Base\\Service\\ClientService" 
+            if (!($this->requestDataDecrypt['service_name'] == "Base\\Service\\ClientService"
                     && $this->requestDataDecrypt['method'] == 'curlMoreReqMallService')){
                 $isMore = false;
             }
@@ -389,37 +397,37 @@ class Application extends \Phalcon\Mvc\Application
             $this->app = $this->requestDataDecrypt['app'];
             $this->serviceName = $this->requestDataDecrypt['service_name'];
             $this->method = $this->requestDataDecrypt['method'];
-            $this->args = (isset($this->requestDataDecrypt['args']) && $this->requestDataDecrypt['args'] != 'null') 
-                    ? $this->requestDataDecrypt['args'] 
+            $this->args = (isset($this->requestDataDecrypt['args']) && $this->requestDataDecrypt['args'] != 'null')
+                    ? $this->requestDataDecrypt['args']
                     : null;
             $this->timeStamp = $this->requestDataDecrypt['time'];
             $version = isset($this->requestDataDecrypt['version']) ? $this->requestDataDecrypt['version'] : '';
             $this->client = isset($this->requestDataDecrypt['client']) ? $this->requestDataDecrypt['client'] : '';
             // 登陆信息
-            $this->userLoginToken = $option['user_login_token'] = 
-                    isset($this->requestDataDecrypt['user_login_token']) 
-                    ? $this->requestDataDecrypt['user_login_token'] 
+            $this->userLoginToken = $option['user_login_token'] =
+                    isset($this->requestDataDecrypt['user_login_token'])
+                    ? $this->requestDataDecrypt['user_login_token']
                     : '';
             // 客户端信息
-            $clearCache = $option['clear_cache'] = 
-                    isset($this->requestDataDecrypt['clear_cache']) 
-                    ? $this->requestDataDecrypt['clear_cache'] 
+            $clearCache = $option['clear_cache'] =
+                    isset($this->requestDataDecrypt['clear_cache'])
+                    ? $this->requestDataDecrypt['clear_cache']
                     : '';
-            $this->clientVersion = $option['client_version'] = 
-                    isset($this->requestDataDecrypt['client_version']) 
-                    ? $this->requestDataDecrypt['client_version'] 
+            $this->clientVersion = $option['client_version'] =
+                    isset($this->requestDataDecrypt['client_version'])
+                    ? $this->requestDataDecrypt['client_version']
                     : '';
-            $this->clientName = $option['client_name'] = 
-                    isset($this->requestDataDecrypt['client_name']) 
-                    ? $this->requestDataDecrypt['client_name'] 
+            $this->clientName = $option['client_name'] =
+                    isset($this->requestDataDecrypt['client_name'])
+                    ? $this->requestDataDecrypt['client_name']
                     : '';
-            $this->clientUserType = $option['client_user_type'] = 
-                    isset($this->requestDataDecrypt['client_user_type']) 
-                    ? $this->requestDataDecrypt['client_user_type'] 
+            $this->clientUserType = $option['client_user_type'] =
+                    isset($this->requestDataDecrypt['client_user_type'])
+                    ? $this->requestDataDecrypt['client_user_type']
                     : '';
-            $this->deviceNumber = $option['device_number'] = 
-                    isset($this->requestDataDecrypt['device_number']) 
-                    ? $this->requestDataDecrypt['device_number'] 
+            $this->deviceNumber = $option['device_number'] =
+                    isset($this->requestDataDecrypt['device_number'])
+                    ? $this->requestDataDecrypt['device_number']
                     : '';
             $this->clientAddress = $option['client_address'] =
                     !empty($request->getClientAddress())
@@ -442,7 +450,9 @@ class Application extends \Phalcon\Mvc\Application
 
             ! empty($version) && $this->method = $this->method . $version;
             if (! is_null($this->args)) {
-                $this->args = json_decode($this->args, true);
+                if (!$this->isRemoveEncrypt) {
+                    $this->args = json_decode($this->args, true);
+                }
                 is_null($this->args) && $this->args = [];
                 if (isset($this->args['clear'])) {
                     if (! empty($this->args['clear'])) {
@@ -494,8 +504,8 @@ class Application extends \Phalcon\Mvc\Application
                 }
             }else {
                 if (strpos($this->serviceName, '\\') === false) {
-                    $class = empty($this->client) 
-                            ? $this->app . '\Service\\' . $this->serviceName 
+                    $class = empty($this->client)
+                            ? $this->app . '\Service\\' . $this->serviceName
                             : $this->app . '\Service\\' . $this->client . '\\' . $this->serviceName;
                 } else {
                     $class = $this->serviceName;
@@ -752,8 +762,8 @@ class Application extends \Phalcon\Mvc\Application
         // 获取登录缓存信息
         $cache = $this->getDI()->get('Api\\Lib\\Cache\\DefaultCache', [])->getRedisCache();
         $this->userLoginInfo = $cache->hGetAll('UserLoginTokenInfo:'.$loginData['user_login_token']);
-        if (empty($this->userLoginInfo) 
-                || ! isset($this->userLoginInfo['dateline']) 
+        if (empty($this->userLoginInfo)
+                || ! isset($this->userLoginInfo['dateline'])
                 || $this->userLoginInfo['dateline'] < time()) {
            return false;
         }
@@ -807,13 +817,19 @@ class Application extends \Phalcon\Mvc\Application
         if (empty($key)) {
             throw new LogicException("access_token invalid ", StatusCode::ACCESS_TOKEN_INVALID);
         }
-        $data = strrev($data);
-        $iv = substr($data, 0, 8);
-        $this->desCrypt = new \Swallow\Toolkit\Encrypt\DesCrypt($key, $iv);
-        $length = strlen($data) - 14;
-        $decodeData = substr($data, 8, $length);
-        //!empty($transmissionVersion) && $transmissionVersion == 'v2' && $decodeData = base64_decode($decodeData);
-        $data = json_decode($this->desCrypt->decrypt($decodeData), true);
+        $result = json_decode($data, true);
+        if (json_last_error() === JSON_ERROR_NONE) {
+            $this->isRemoveEncrypt = true;
+            return $result;
+        } else {
+            $data = strrev($data);
+            $iv = substr($data, 0, 8);
+            $this->desCrypt = new \Swallow\Toolkit\Encrypt\DesCrypt($key, $iv);
+            $length = strlen($data) - 14;
+            $decodeData = substr($data, 8, $length);
+            //!empty($transmissionVersion) && $transmissionVersion == 'v2' && $decodeData = base64_decode($decodeData);
+            $data = json_decode($this->desCrypt->decrypt($decodeData), true);
+        }
         return $data;
     }
 
@@ -830,7 +846,7 @@ class Application extends \Phalcon\Mvc\Application
         $this->handleStatus = isset($data['status']) ? $data['status'] : 0;
         $this->handleInfo = isset($data['info']) ? $data['info'] : '';
         $this->handleRetval = isset($data['retval']) ? $data['retval'] :[];
-        
+
         if (empty(self::$tokenConfig)) {
             return;
         }
@@ -864,7 +880,7 @@ class Application extends \Phalcon\Mvc\Application
     /**
      * @overide
      * @see \Swallow\Bootstrap\ApiStatisticsInterface#getTransmissionFrom
-     * 
+     *
      * @author    李焯桓 <lizhuohuan@eelly.net>
      * @since 2017年3月12日
      */
@@ -876,7 +892,7 @@ class Application extends \Phalcon\Mvc\Application
     /**
      * @overide
      * @see \Swallow\Bootstrap\ApiStatisticsInterface#getApp
-     * 
+     *
      * @author    李焯桓 <lizhuohuan@eelly.net>
      * @since 2017年3月12日
      */
@@ -888,7 +904,7 @@ class Application extends \Phalcon\Mvc\Application
     /**
      * @overide
      * @see \Swallow\Bootstrap\ApiStatisticsInterface#getArgs
-     * 
+     *
      * @author    李焯桓 <lizhuohuan@eelly.net>
      * @since 2017年3月12日
      */
@@ -900,7 +916,7 @@ class Application extends \Phalcon\Mvc\Application
     /**
      * @overide
      * @see \Swallow\Bootstrap\ApiStatisticsInterface#getClientName
-     * 
+     *
      * @author    李焯桓 <lizhuohuan@eelly.net>
      * @since 2017年3月12日
      */
@@ -912,7 +928,7 @@ class Application extends \Phalcon\Mvc\Application
     /**
      * @overide
      * @see \Swallow\Bootstrap\ApiStatisticsInterface#getClientUserType
-     * 
+     *
      * @author    李焯桓 <lizhuohuan@eelly.net>
      * @since 2017年3月12日
      */
@@ -924,7 +940,7 @@ class Application extends \Phalcon\Mvc\Application
     /**
      * @overide
      * @see \Swallow\Bootstrap\ApiStatisticsInterface#getClientVersion
-     * 
+     *
      * @author    李焯桓 <lizhuohuan@eelly.net>
      * @since 2017年3月12日
      */
@@ -936,7 +952,7 @@ class Application extends \Phalcon\Mvc\Application
     /**
      * @overide
      * @see \Swallow\Bootstrap\ApiStatisticsInterface#getDeviceNumber
-     * 
+     *
      * @author    李焯桓 <lizhuohuan@eelly.net>
      * @since 2017年3月12日
      */
@@ -948,7 +964,7 @@ class Application extends \Phalcon\Mvc\Application
     /**
      * @overide
      * @see \Swallow\Bootstrap\ApiStatisticsInterface#getMethod
-     * 
+     *
      * @author    李焯桓 <lizhuohuan@eelly.net>
      * @since 2017年3月12日
      */
@@ -960,7 +976,7 @@ class Application extends \Phalcon\Mvc\Application
     /**
      * @overide
      * @see \Swallow\Bootstrap\ApiStatisticsInterface#getServiceName
-     * 
+     *
      * @author    李焯桓 <lizhuohuan@eelly.net>
      * @since 2017年3月12日
      */
@@ -972,7 +988,7 @@ class Application extends \Phalcon\Mvc\Application
     /**
      * @overide
      * @see \Swallow\Bootstrap\ApiStatisticsInterface#getUserLoginToken
-     * 
+     *
      * @author    李焯桓 <lizhuohuan@eelly.net>
      * @since 2017年3月12日
      */
@@ -984,7 +1000,7 @@ class Application extends \Phalcon\Mvc\Application
     /**
      * @overide
      * @see \Swallow\Bootstrap\ApiStatisticsInterface#getUserLoginTokenUserId
-     * 
+     *
      * @author    李焯桓 <lizhuohuan@eelly.net>
      * @since 2017年3月12日
      */
@@ -996,7 +1012,7 @@ class Application extends \Phalcon\Mvc\Application
     /**
      * @overide
      * @see \Swallow\Bootstrap\ApiStatisticsInterface#getHandleInfo
-     * 
+     *
      * @author    李焯桓 <lizhuohuan@eelly.net>
      * @since 2017年3月12日
      */
@@ -1008,7 +1024,7 @@ class Application extends \Phalcon\Mvc\Application
     /**
      * @overide
      * @see \Swallow\Bootstrap\ApiStatisticsInterface#getHandleRetval
-     * 
+     *
      * @author    李焯桓 <lizhuohuan@eelly.net>
      * @since 2017年3月12日
      */
@@ -1020,7 +1036,7 @@ class Application extends \Phalcon\Mvc\Application
     /**
      * @overide
      * @see \Swallow\Bootstrap\ApiStatisticsInterface#getHandleStatus
-     * 
+     *
      * @author    李焯桓 <lizhuohuan@eelly.net>
      * @since 2017年3月12日
      */
@@ -1032,7 +1048,7 @@ class Application extends \Phalcon\Mvc\Application
     /**
      * @overide
      * @see \Swallow\Bootstrap\ApiStatisticsInterface#getRequestData
-     * 
+     *
      * @author    李焯桓 <lizhuohuan@eelly.net>
      * @since 2017年3月12日
      */
@@ -1044,7 +1060,7 @@ class Application extends \Phalcon\Mvc\Application
     /**
      * @overide
      * @see \Swallow\Bootstrap\ApiStatisticsInterface#getRequestDataDecrypt
-     * 
+     *
      * @author    李焯桓 <lizhuohuan@eelly.net>
      * @since 2017年3月12日
      */
@@ -1052,10 +1068,10 @@ class Application extends \Phalcon\Mvc\Application
     {
         return $this->requestDataDecrypt;
     }
-    
+
     /**
      * 是否开启测试模式 - 参数校验
-     * 
+     *
      * @author 李伟权   <liweiquan@eelly.net>
      * @since 2017年3月12日
      * @return boolean
@@ -1086,7 +1102,7 @@ class Application extends \Phalcon\Mvc\Application
     {
         return $this->sessionId;
     }
-    
+
     /**
      * 验证v2加密参数
      *
@@ -1096,13 +1112,13 @@ class Application extends \Phalcon\Mvc\Application
      * @since 2017年3月12日
      */
     private function verifyV2Param($params)
-    {      
+    {
         if (!$this->verifyParam($params) || empty($params['sign'])) {
             return false;
         }
         return true;
     }
-    
+
     /**
      * 验证v2加密签名
      *
