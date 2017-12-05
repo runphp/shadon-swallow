@@ -322,6 +322,7 @@ class Application extends \Phalcon\Mvc\Application
         if ($this->isRemoveEncrypt) {
             $data['data'] = $retval;
             $data['signature'] = $signature;
+            unset($data['retval']);
         }else{
             $data['retval'] = ['data' => $retval, 'signature' => $signature];
         }
