@@ -450,9 +450,9 @@ class Application extends \Phalcon\Mvc\Application
 
             ! empty($version) && $this->method = $this->method . $version;
             if (! is_null($this->args)) {
-                if (!$this->isRemoveEncrypt) {
+                //if (!$this->isRemoveEncrypt) {
                     $this->args = json_decode($this->args, true);
-                }
+                //}
                 is_null($this->args) && $this->args = [];
                 if (isset($this->args['clear'])) {
                     if (! empty($this->args['clear'])) {
