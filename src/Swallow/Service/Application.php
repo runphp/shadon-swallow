@@ -319,12 +319,9 @@ class Application extends \Phalcon\Mvc\Application
                 //!empty($this->encryptVersion) && $this->encryptVersion == 'v2' && $retval = base64_encode($retval);
             }
         }
-        if ($this->isRemoveEncrypt) {
-            $data['data'] = $retval;
-            $data['signature'] = $signature;
-            unset($data['retval']);
-        }else{
-            $data['retval'] = ['data' => $retval, 'signature' => $signature];
+        $data['retval'] = ['data' => $retval, 'signature' => $signature];
+        if (!$this->isRemoveEncrypt && 0 == time() % 5) {
+            $data = ['status' => 400, 'retval'=>null, 'info' => '接口请求升级中(去除加解密)'];
         }
         if (is_object($eventsManager)) {
             $eventsManager->fire("application:afterBootstrap", $this);
@@ -604,15 +601,44 @@ class Application extends \Phalcon\Mvc\Application
                 // 过渡版本 : android和ios客户端，厂+版本2.2.0，店+版本4.3.0之前的版本
                 $isTransition   = in_array(strtolower($this->clientName), ['ios', 'android']) && (($this->clientUserType == 'buyer' && $this->clientVersion < 430) || ($this->clientUserType == 'seller' && $this->clientVersion < 220));
                 $service        = $isTransition ? 'transitionService' : 'oldService';
-                $config         = $this->getDI()->getConfig()->$service->toArray();
-                $res            = \Swallow\Toolkit\Net\Service::getInstance($config)->module($this->serviceName)
+                $config         = $this->getDI()->getConfig();
+                $serviceOption = $config->$service->toArray();
+                // 第二代接口 start
+                $httpClient = new \GuzzleHttp\Client([
+                    'http_errors' => false,
+                    'verify' => false,
+                ]);
+                $arr = explode('\\', $this->serviceName);
+                $url = $config->url->mall.'/service.php?_url='.
+                    sprintf('/%s/%s/%s', lcfirst($arr[0]), lcfirst(substr($arr[2], 0, strlen($arr[2]) - 7)), $this->method);
+                $start = microtime(true);
+                $data = $httpClient->post($url,[
+                    'headers' => [
+                        'client-id' => $serviceOption['account'],
+                        'client-secret' => $serviceOption['secret_key'],
+                        'login-token' => $this->userLoginToken,
+                        'clear-cache' => $clearCache,
+                        'client-version' => $this->clientVersion,
+                        'client-name' => $this->clientName,
+                        'client-user-type' => $this->clientUserType,
+                        'device-number' => $this->deviceNumber,
+                        'client-address' => $this->clientAddress,
+                        'session-id' => $this->sessionId,
+                        'Content-Type' => 'application/json'
+                    ],
+                    'json' => $this->args,
+                ]);
+                $res = json_decode((string)$data->getBody(), true);
+                // 第二代接口测试 end
+                /*$res = \Swallow\Toolkit\Net\Service::getInstance($serviceOption)->module($this->serviceName)
                     ->method($this->method)
                     ->args($this->args)
                     ->setNewArgs($option)
                     ->setIsPhinx($this->isPhinx)
-                    ->exec();
+                    ->exec();*/
                 if ($res['status'] == StatusCode::OK) {
-                    $res = $res['retval'];
+                    //$res = $res['retval'];
+                    $res = $res['data'];
                 } else {
                     throw new LogicException($res['info'], $res['status']);
                 }
