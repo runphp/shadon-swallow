@@ -590,10 +590,10 @@ class Application extends \Phalcon\Mvc\Application
 
 
             // 验证超时
-            if ($this->timeStamp < $this->sysTimeStamp - self::$expirationTime || $this->timeStamp > $this->sysTimeStamp + self::$expirationTime) {
+            /*if ($this->timeStamp < $this->sysTimeStamp - self::$expirationTime || $this->timeStamp > $this->sysTimeStamp + self::$expirationTime) {
                 $this->debugInfo = $this->serviceName . '/' . $this->requestDataDecrypt['method'] . '/this.timeStamp =' . $this->timeStamp . ',time()=' . $this->sysTimeStamp;
                 throw new LogicException("Timeout！", StatusCode::REQUEST_TIME_OUT);
-            }
+            }*/
 
             if ($isOld) {
                 // 过渡版本 : android和ios客户端，厂+版本2.2.0，店+版本4.3.0之前的版本
