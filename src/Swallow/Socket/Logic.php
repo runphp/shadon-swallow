@@ -29,7 +29,7 @@ class Logic extends \Swallow\Di\Injectable
     }
 
     /**
-     * @return self
+     * @return static
      * 
      * @param $isNewInstance
      * @author 何辉<hehui@eely.net>

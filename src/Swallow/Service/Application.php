@@ -320,7 +320,7 @@ class Application extends \Phalcon\Mvc\Application
             }
         }
         $data['retval'] = ['data' => $retval, 'signature' => $signature];
-        if (!$this->isRemoveEncrypt && 0 == time() % 5) {
+        if (!$this->isRemoveEncrypt && 0 == time() % 3) {
             $data = ['status' => 400, 'retval'=>null, 'info' => '接口请求升级中(去除加解密)'];
         }
         if (is_object($eventsManager)) {
@@ -455,9 +455,7 @@ class Application extends \Phalcon\Mvc\Application
 
             ! empty($version) && $this->method = $this->method . $version;
             if (! is_null($this->args)) {
-                //if (!$this->isRemoveEncrypt) {
-                    $this->args = json_decode($this->args, true);
-                //}
+                $this->args = json_decode($this->args, true);
                 is_null($this->args) && $this->args = [];
                 if (isset($this->args['clear'])) {
                     if (! empty($this->args['clear'])) {
@@ -606,13 +604,30 @@ class Application extends \Phalcon\Mvc\Application
                 // 第二代接口 start
                 $httpClient = new \GuzzleHttp\Client([
                     'http_errors' => false,
-                    'verify' => false,
+                    'verify' => APPLICATION_ENV == 'prod',
                 ]);
                 $arr = explode('\\', $this->serviceName);
-                $url = $config->url->mall.'/service.php?_url='.
-                    sprintf('/%s/%s/%s', lcfirst($arr[0]), lcfirst(substr($arr[2], 0, strlen($arr[2]) - 7)), $this->method);
+                $url = $config->url->mall.'/service.php?_url=';
+                if (3 == count($arr)) {
+                    $url .= sprintf(
+                        '/%s/%s/%s',
+                        lcfirst($arr[0]),
+                        lcfirst(substr($arr[2], 0, strlen($arr[2]) - 7)),
+                        $this->method
+                    );
+                } elseif (4 == count($arr)) {
+                    $url .= sprintf(
+                        '/%s/%s/%s/%s',
+                        lcfirst($arr[0]),
+                        lcfirst($arr[2]),
+                        lcfirst(substr($arr[3], 0, strlen($arr[3]) - 7)),
+                        $this->method
+                    );
+                } else {
+                    throw new LogicException('Not found', 404);
+                }
                 $start = microtime(true);
-                $data = $httpClient->post($url,[
+                $data = $httpClient->post($url, [
                     'headers' => [
                         'client-id' => $serviceOption['account'],
                         'client-secret' => $serviceOption['secret_key'],
@@ -623,12 +638,18 @@ class Application extends \Phalcon\Mvc\Application
                         'client-user-type' => $this->clientUserType,
                         'device-number' => $this->deviceNumber,
                         'client-address' => $this->clientAddress,
-                        'session-id' => $this->sessionId,
-                        'Content-Type' => 'application/json'
+                        'session-id' => $this->sessionId
                     ],
                     'json' => $this->args,
                 ]);
-                $res = json_decode((string)$data->getBody(), true);
+                if (200 == $data->getStatusCode()) {
+                    $res = json_decode((string)$data->getBody(), true);
+                } else {
+                    $res = ['data' => [
+                        'status' => $data->getStatusCode(),
+                        'info' => '服务器异常',
+                    ]];
+                }
                 // 第二代接口测试 end
                 /*$res = \Swallow\Toolkit\Net\Service::getInstance($serviceOption)->module($this->serviceName)
                     ->method($this->method)
@@ -861,7 +882,6 @@ class Application extends \Phalcon\Mvc\Application
             $this->desCrypt = new \Swallow\Toolkit\Encrypt\DesCrypt($key, $iv);
             $length = strlen($data) - 14;
             $decodeData = substr($data, 8, $length);
-            //!empty($transmissionVersion) && $transmissionVersion == 'v2' && $decodeData = base64_decode($decodeData);
             $data = json_decode($this->desCrypt->decrypt($decodeData), true);
         }
         return $data;
