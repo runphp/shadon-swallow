@@ -617,7 +617,7 @@ class Application extends \Phalcon\Mvc\Application
                     );
                 } elseif (4 == count($arr)) {
                     $url .= sprintf(
-                        '/%s/%s/%s/%s',
+                        '/%s_%s/%s/%s',
                         lcfirst($arr[0]),
                         lcfirst($arr[2]),
                         lcfirst(substr($arr[3], 0, strlen($arr[3]) - 7)),
@@ -626,7 +626,6 @@ class Application extends \Phalcon\Mvc\Application
                 } else {
                     throw new LogicException('Not found', 404);
                 }
-                $start = microtime(true);
                 $data = $httpClient->post($url, [
                     'headers' => [
                         'client-id' => $serviceOption['account'],
@@ -650,7 +649,7 @@ class Application extends \Phalcon\Mvc\Application
                         'info' => '服务器异常',
                     ]];
                 }
-                // 第二代接口测试 end
+                // 第二代接口 end
                 /*$res = \Swallow\Toolkit\Net\Service::getInstance($serviceOption)->module($this->serviceName)
                     ->method($this->method)
                     ->args($this->args)
