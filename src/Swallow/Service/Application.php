@@ -320,7 +320,7 @@ class Application extends \Phalcon\Mvc\Application
             }
         }
         $data['retval'] = ['data' => $retval, 'signature' => $signature];
-        if (!$this->isRemoveEncrypt && 0 == time() % 3) {
+        if (!$this->isRemoveEncrypt && APPLICATION_ENV != 'prod' && 0 == time() % 3) {
             $data = ['status' => 400, 'retval'=>null, 'info' => '接口请求升级中(去除加解密)'];
         }
         if (is_object($eventsManager)) {
@@ -644,10 +644,10 @@ class Application extends \Phalcon\Mvc\Application
                 if (200 == $data->getStatusCode()) {
                     $res = json_decode((string)$data->getBody(), true);
                 } else {
-                    $res = ['data' => [
+                    $res = [
                         'status' => $data->getStatusCode(),
-                        'info' => '服务器异常',
-                    ]];
+                        'info' => '服务器异常(www)',
+                    ];
                 }
                 // 第二代接口 end
                 /*$res = \Swallow\Toolkit\Net\Service::getInstance($serviceOption)->module($this->serviceName)
