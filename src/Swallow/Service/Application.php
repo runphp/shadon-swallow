@@ -652,7 +652,8 @@ class Application extends \Phalcon\Mvc\Application
                 ]);
                 if (200 == $data->getStatusCode()) {
                     //$res = json_decode((string)$data->getBody(), true);
-                    $res = \Swallow\Toolkit\Util\Json::decode2((string)$data->getBody());
+                    //$res = \Swallow\Toolkit\Util\Json::decode2((string)$data->getBody());
+                    $this->isPhinx ? \Swallow\Toolkit\Util\Json::decode2((string)$data->getBody()) : json_decode((string)$data->getBody(), true);
                 } else {
                     $res = [
                         'status' => $data->getStatusCode(),
