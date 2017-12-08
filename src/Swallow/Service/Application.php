@@ -651,7 +651,8 @@ class Application extends \Phalcon\Mvc\Application
                     'json' => $this->args,
                 ]);
                 if (200 == $data->getStatusCode()) {
-                    $res = json_decode((string)$data->getBody(), true);
+                    //$res = json_decode((string)$data->getBody(), true);
+                    $res = \Swallow\Toolkit\Util\Json::decode2((string)$data->getBody());
                 } else {
                     $res = [
                         'status' => $data->getStatusCode(),
