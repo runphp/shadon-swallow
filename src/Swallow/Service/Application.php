@@ -623,6 +623,15 @@ class Application extends \Phalcon\Mvc\Application
                         lcfirst(substr($arr[3], 0, strlen($arr[3]) - 7)),
                         $this->method
                     );
+                } elseif (5 == count($arr)) {
+                    $url .= sprintf(
+                        '/%s_%s_%s/%s/%s',
+                        lcfirst($arr[0]),
+                        lcfirst($arr[2]),
+                        lcfirst($arr[3]),
+                        lcfirst(substr($arr[4], 0, strlen($arr[4]) - 7)),
+                        $this->method
+                    );
                 } else {
                     throw new LogicException('Not found', 404);
                 }
