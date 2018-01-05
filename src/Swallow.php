@@ -50,19 +50,6 @@ class Swallow
         self::$path = array_merge(self::$path, $path);
         // 初始化 DI
         self::$defaultDi = new \Swallow\Di\FactoryDefault();
-        self::$defaultDi->setShared('shadonConfig', function(){
-            return new Config(require 'var/config/config.php');
-        });
-
-        // add cache service
-        self::$defaultDi->setShared('cache', function () {
-            $config = self::$defaultDi->getShadonConfig()->cache->toArray();
-            $frontend = $this->get($config['frontend'], [$config['options'][$config['frontend']]]);
-            return $this->get($config['backend'], [$frontend, $config['options'][$config['backend']]]);
-        });
-        $options =  self::$defaultDi->getShadonConfig()->oauth2Client->eelly->toArray();
-        EellyClient::initialize($options, self::$defaultDi->get('cache'));
-
         //初始化aop
         Aop\Instance::init(
             [
