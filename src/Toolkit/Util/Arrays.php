@@ -268,17 +268,21 @@ class Arrays
         if (empty($array) || empty($field)){
             return array();
         }
-
+        // 大数组分块处理
+        $arrayChunk = array_chunk($array, 100);
         // 替换下标
         $result = array();
         $fields = is_array($field) ? $field : [$field];
-        foreach ($array as $k => $v){
-            $keys   = [];
-            foreach ($fields as $key){
-                $keys[] = !isset($v[$key]) ? '' : $v[$key];
+        while ($chunk = current($arrayChunk)){
+            foreach ($chunk as $k => $v){
+                $keys   = [];
+                foreach ($fields as $key){
+                    $keys[] = !isset($v[$key]) ? '' : $v[$key];
+                }
+                $keys   = implode('_', $keys);
+                $multiple ? $result[$keys][] = $v : $result[$keys] = $v;
             }
-            $keys   = implode('_', $keys);
-            $multiple ? $result[$keys][] = $v : $result[$keys] = $v;
+            next($arrayChunk);
         }
         
         return $result;
