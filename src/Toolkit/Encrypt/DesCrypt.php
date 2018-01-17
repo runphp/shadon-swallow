@@ -102,6 +102,7 @@ class DesCrypt
      */
     function encrypt($str)
     {
+        return $str;
         $size = mcrypt_get_block_size(MCRYPT_3DES, MCRYPT_MODE_CBC);
         $str = $this->pkcs5Pad($str, $size);
         $key = str_pad($this->key, 24, '0');
@@ -127,6 +128,7 @@ class DesCrypt
      */
     function decrypt($str)
     {
+        return $str;
         if (empty($str)){
             return '';
         }
