@@ -587,8 +587,6 @@ class Application extends \Phalcon\Mvc\Application
                 }
             }
 
-
-
             // 验证超时
             /*if ($this->timeStamp < $this->sysTimeStamp - self::$expirationTime || $this->timeStamp > $this->sysTimeStamp + self::$expirationTime) {
                 $this->debugInfo = $this->serviceName . '/' . $this->requestDataDecrypt['method'] . '/this.timeStamp =' . $this->timeStamp . ',time()=' . $this->sysTimeStamp;
@@ -605,6 +603,7 @@ class Application extends \Phalcon\Mvc\Application
                 $httpClient = new \GuzzleHttp\Client([
                     'http_errors' => false,
                     'verify' => APPLICATION_ENV == 'prod',
+                    'User-Agent' => 'newmall/1.0 '.\GuzzleHttp\default_user_agent(),
                 ]);
                 $arr = explode('\\', $this->serviceName);
                 $url = $config->url->mall.'/service.php?_url=';

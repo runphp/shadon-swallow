@@ -45,7 +45,7 @@ class Model extends \Phalcon\Mvc\Model
     }
 
     /**
-     * @return self
+     * @return static
      * 
      * @param $isNewInstance
      * @author 范世军<fanshijun@eelly.net>
