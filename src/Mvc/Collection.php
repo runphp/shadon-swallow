@@ -21,6 +21,7 @@ use Phalcon\Mvc\Collection\Exception;
 use Phalcon\Mvc\CollectionInterface;
 use Swallow\Core\Log;
 use Swallow\Mongodb\Exception\MongoDuplicateKeyException;
+use Swallow\Core\Conf;
 
 /**
  * class Collection for MongoDB.
@@ -563,7 +564,8 @@ abstract class Collection extends PhalconCollection implements Unserializable
          */
         $cursor = $mongoCollection->find($conditions, $options);
         $used = time() - $startTime;
-        if (5 <= $used) {
+        $slowTime = Conf::get('Swallow/mongodb/slow_sql_time') ?: 5;
+        if ($slowTime <= $used) {
             Log::warning('slow mongodb query', ['collection' => $source, 'query' => ['$conditions' => $conditions, '$options' => $options], 'used' => $used.'s']);
         }
 

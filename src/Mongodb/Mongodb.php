@@ -14,6 +14,7 @@ use Swallow\Core\Log;
 use Swallow\Exception\StatusCode;
 use Swallow\Exception\DbException;
 use Swallow\Mongodb\Exception\MongoDuplicateKeyException;
+use Swallow\Core\Conf;
 
 /**
  * 模块 -> 模形基类
@@ -276,7 +277,8 @@ abstract class Mongodb extends Base
         $startTime = time();
         $cursor = $this->c->find($this->query, $options);
         $used = time() - $startTime;
-        if (5 <= $used) {
+        $slowTime = Conf::get('Swallow/mongodb/slow_sql_time') ?: 5;
+        if ($slowTime <= $used) {
             Log::warning('slow mongodb query', ['collection' => $this->c->getCollectionName(), 'query' => ['$conditions' => $this->query, '$options' => $options], 'used' => $used.'s']);
         }
         $this->clearSet();
