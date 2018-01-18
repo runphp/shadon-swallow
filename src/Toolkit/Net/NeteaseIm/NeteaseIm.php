@@ -51,15 +51,8 @@ class NeteaseIm
         }
     }
 
-    public function request($args)
+    public function request($uri, $args)
     {
-        $callMethod = array_slice(debug_backtrace(), 2, 1);
-        $reader = (new \Phalcon\Annotations\Adapter\Memory())->getMethod($callMethod[0]['class'], $callMethod[0]['function']);
-        if (!$reader->has('uri')){
-            throw new \ErrorException($callMethod[0]['function'] . ' not found uri annotation');
-        };
-        $annotation = $reader->get('uri');
-        $uri = $annotation->getArgument(0);
         $this->setNonce();
         $curTime = time();
         $checkSum = sha1(sprintf('%s%s%s',
