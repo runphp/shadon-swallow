@@ -11,6 +11,7 @@ namespace Swallow\Db;
 use Swallow\Db\Db;
 use Whoops\Exception\ErrorException;
 use Swallow\Exception\DbException;
+use Swallow\Core\Conf;
 
 /**
  * Mysqli类
@@ -283,7 +284,8 @@ class Mysqli implements Db
             $startTime = time();
             $this->queryObj = $this->linkObj->query($sql);
             $used = time() - $startTime;
-            if($used >= 5){
+            $slowTime = Conf::get('Swallow/db/slow_sql_time') ?: 5;
+            if($used >= $slowTime){
                 \Swallow\Core\Log::warning('slow sql', ['sql' => $sql, 'used' => $used.'s']);
             }
         } catch (ErrorException $e) {
@@ -317,7 +319,8 @@ class Mysqli implements Db
             $startTime = time();
             $result = $this->linkObj->query($sql);
             $used = time() - $startTime;
-            if($used >= 5){
+            $slowTime = Conf::get('Swallow/db/slow_sql_time') ?: 5;
+            if($used >= $slowTime){
                 \Swallow\Core\Log::warning('slow sql', ['sql' => $sql, 'used' => $used.'s']);
             }
         } catch (ErrorException $e) {

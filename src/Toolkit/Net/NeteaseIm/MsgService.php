@@ -66,11 +66,6 @@ class MsgService extends Service
         return $result;
     }
 
-    public function getResponse($args)
-    {
-        return $this->neteaseIm->request($args);
-    }
-
     /**
      * @uri("msg/sendMsg.action")
      *

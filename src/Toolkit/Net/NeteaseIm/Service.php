@@ -37,12 +37,21 @@ class Service
 
     protected function getResponse($args)
     {
-        $response = $this->neteaseIm->request($args);
+        $callMethod = array_slice(debug_backtrace(\DEBUG_BACKTRACE_IGNORE_ARGS), 1, 1);
+        $reader = (new \Phalcon\Annotations\Adapter\Memory())->getMethod($callMethod[0]['class'], $callMethod[0]['function']);
+        if (!$reader->has('uri')){
+            throw new \ErrorException($callMethod[0]['function'] . ' not found uri annotation');
+        };
+        $annotation = $reader->get('uri');
+        $uri = $annotation->getArgument(0);
+        $response = $this->neteaseIm->request($uri, $args);
         if ('200' != $response['code']){
-            $errorMessage = sprintf('[statusCode] %s,[errorInfo] %s',
+            $errorMessage = sprintf('[statusCode] %s,[errorInfo] %s [requestUri] %s [requestArgs] %s',
                 $response['code'],
-                $response['desc']
-                );
+                $response['desc'],
+                $uri,
+                json_encode($args)
+            );
             throw new ErrorException($errorMessage);
         }
 
