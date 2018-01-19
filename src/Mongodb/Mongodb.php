@@ -1,20 +1,23 @@
 <?php
+
+declare(strict_types=1);
+
 /*
- * PHP version 5.5
+ * This file is part of eelly package.
  *
- * @copyright Copyright (c) 2012-2017 EELLY Inc. (http://www.eelly.com)
- * @link      http://www.eelly.com
- * @license   衣联网版权所有
+ * (c) eelly.com
+ *
+ * For the full copyright and license information, please view the LICENSE
+ * file that was distributed with this source code.
  */
 
 namespace Swallow\Mongodb;
 
 use Swallow\Core\Base;
 use Swallow\Core\Log;
-use Swallow\Exception\StatusCode;
 use Swallow\Exception\DbException;
+use Swallow\Exception\StatusCode;
 use Swallow\Mongodb\Exception\MongoDuplicateKeyException;
-use Swallow\Core\Conf;
 
 /**
  * 模块 -> 模形基类
@@ -28,11 +31,6 @@ use Swallow\Core\Conf;
  */
 abstract class Mongodb extends Base
 {
-    /**
-     * @var \MongoDB\Client
-     */
-    private $connection;
-
     /**
      * 数据库对象
      *
@@ -102,6 +100,15 @@ abstract class Mongodb extends Base
      * @var string
      */
     protected $insertId = 0;
+    /**
+     * @var \MongoDB\Client
+     */
+    private $connection;
+
+    /**
+     * @var \Swallow\Mvc\Collection\Manager
+     */
+    private $collectionManager;
 
     /**
      * 构造.
@@ -119,20 +126,12 @@ abstract class Mongodb extends Base
     public function __construct($config, $db, $collection)
     {
         $di = \Phalcon\Di::getDefault();
-        /* @var \Phalcon\Mvc\Collection\Manager $collectionManager */
-        $collectionManager = $di->get('collectionManager');
-        $this->connection = $di->has('mongo_' . $db) ? $di->get('mongo_' . $db) : $di->get('mongo_default');
+        $this->collectionManager = $di->get('collectionManager');
+        $this->connection = $di->has('mongo_'.$db) ? $di->get('mongo_'.$db) : $di->get('mongo_default');
         $this->db = $this->connection->selectDatabase($db);
         $this->oCollectionName = $collection;
         $this->setCollection($collection);
         $this->init();
-    }
-
-    /**
-     * 初始化.
-     */
-    protected function init()
-    {
     }
 
     /**
@@ -240,7 +239,7 @@ abstract class Mongodb extends Base
         foreach ($sortKeys as $v) {
             $v = preg_replace('/[ ]{2,}/i', ' ', self::lrtrim($v));
             $key = explode(' ', $v, 2);
-            $this->sort[$key[0]] = ((!isset($key[1])) || $key[1] == 'asc') ? 1 : -1;
+            $this->sort[$key[0]] = ((!isset($key[1])) || 'asc' == $key[1]) ? 1 : -1;
         }
 
         return $this;
@@ -270,14 +269,14 @@ abstract class Mongodb extends Base
     {
         $options = [
             'projection' => $this->fields,
-            'limit' => $this->limit,
-            'sort' => $this->sort,
-            'skip' => $this->skip,
+            'limit'      => $this->limit,
+            'sort'       => $this->sort,
+            'skip'       => $this->skip,
         ];
         $startTime = time();
         $cursor = $this->c->find($this->query, $options);
         $used = time() - $startTime;
-        $slowTime = Conf::get('Swallow/mongodb/slow_sql_time') ?: 5;
+        $slowTime = $this->collectionManager->getSlowLogTime($this->db->getDatabaseName());
         if ($slowTime <= $used) {
             Log::warning('slow mongodb query', ['collection' => $this->c->getCollectionName(), 'query' => ['$conditions' => $this->query, '$options' => $options], 'used' => $used.'s']);
         }
@@ -425,13 +424,14 @@ abstract class Mongodb extends Base
         $result = $this->c->updateMany($this->query, $newObject, $options);
         $this->clearSet();
         $resultArray = [
-            'ok' => 1.0,
-            'nModified' => $result->getModifiedCount(),
-            'n' => $result->getUpsertedCount() + $result->getModifiedCount(),
-            'err' => null,
-            'errmsg' => null,
-            'updatedExisting' => $result->getUpsertedCount() == 0,
+            'ok'              => 1.0,
+            'nModified'       => $result->getModifiedCount(),
+            'n'               => $result->getUpsertedCount() + $result->getModifiedCount(),
+            'err'             => null,
+            'errmsg'          => null,
+            'updatedExisting' => 0 == $result->getUpsertedCount(),
         ];
+
         return $resultArray;
     }
 
@@ -475,15 +475,15 @@ abstract class Mongodb extends Base
     {
         $result = $this->c->aggregate($pipeline, [
             'typeMap' => [
-                'root' => 'array',
+                'root'     => 'array',
                 'document' => 'array',
-                'array' => 'array',
+                'array'    => 'array',
             ],
         ]);
 
         return [
-            'ok' => 1.0,
-            'result' => $result->toArray(),
+            'ok'       => 1.0,
+            'result'   => $result->toArray(),
             'waitedMS' => 0,
         ];
     }
@@ -512,6 +512,7 @@ abstract class Mongodb extends Base
      * 实现mongodb自增id.
      *
      * @param string $field
+     *
      * @return number|int
      *
      * @author  heyanwen<heyanwen@eelly.net>
@@ -531,9 +532,16 @@ abstract class Mongodb extends Base
     }
 
     /**
+     * 初始化.
+     */
+    protected function init(): void
+    {
+    }
+
+    /**
      * 清空设置.
      */
-    private function clearSet()
+    private function clearSet(): void
     {
         $this->fields = $this->sort = $this->query = [];
         $this->limit = null;

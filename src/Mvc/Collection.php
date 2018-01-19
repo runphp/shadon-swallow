@@ -1,10 +1,14 @@
 <?php
+
+declare(strict_types=1);
+
 /*
- * PHP version 5.5
+ * This file is part of eelly package.
  *
- * @copyright Copyright (c) 2012-2017 EELLY Inc. (http://www.eelly.com)
- * @link      http://www.eelly.com
- * @license   衣联网版权所有
+ * (c) eelly.com
+ *
+ * For the full copyright and license information, please view the LICENSE
+ * file that was distributed with this source code.
  */
 
 namespace Swallow\Mvc;
@@ -21,7 +25,6 @@ use Phalcon\Mvc\Collection\Exception;
 use Phalcon\Mvc\CollectionInterface;
 use Swallow\Core\Log;
 use Swallow\Mongodb\Exception\MongoDuplicateKeyException;
-use Swallow\Core\Conf;
 
 /**
  * class Collection for MongoDB.
@@ -84,7 +87,7 @@ abstract class Collection extends PhalconCollection implements Unserializable
         $clazz = get_called_class();
         $result = $clazz::aggregate([
             '$group' => [
-                '_id' => '',
+                '_id'       => '',
                 'max_value' => [
                     '$max' => "\$$field",
                 ],
@@ -106,7 +109,7 @@ abstract class Collection extends PhalconCollection implements Unserializable
     {
         if (version_compare(PHP_VERSION, '7.1.0') >= 0) {
             $this->_dependencyInjector = \Phalcon\Di::getDefault();
-            $this->_modelsManager = $this->_dependencyInjector->getShared("collectionManager");
+            $this->_modelsManager = $this->_dependencyInjector->getShared('collectionManager');
             $this->_modelsManager->initialize($this);
         }
         $collection = $this->prepareCU();
@@ -278,7 +281,7 @@ abstract class Collection extends PhalconCollection implements Unserializable
      *
      * @param mixed $id
      */
-    public function setId($id)
+    public function setId($id): void
     {
         if (is_object($id)) {
             $this->_id = $id;
@@ -325,7 +328,7 @@ abstract class Collection extends PhalconCollection implements Unserializable
      *
      * @since 2017年4月6日
      */
-    public static function summatory($field, $conditions = null, $finalize = null)
+    public static function summatory($field, $conditions = null, $finalize = null): void
     {
         throw new Exception('The summatory() method is not implemented in the new Mvc Collection');
     }
@@ -345,7 +348,7 @@ abstract class Collection extends PhalconCollection implements Unserializable
         /*
          * Execute the preSave hook
          */
-        if ($this->_preSave($this->_dependencyInjector, self::$_disableEvents, false) === false) {
+        if (false === $this->_preSave($this->_dependencyInjector, self::$_disableEvents, false)) {
             return false;
         }
         $data = $this->toArray();
@@ -374,7 +377,7 @@ abstract class Collection extends PhalconCollection implements Unserializable
      *
      * @since 2017年4月6日
      */
-    public function bsonUnserialize(array $data)
+    public function bsonUnserialize(array $data): void
     {
         $this->setDI(Di::getDefault());
         $this->_modelsManager = Di::getDefault()->getShared('collectionManager');
@@ -557,20 +560,20 @@ abstract class Collection extends PhalconCollection implements Unserializable
                 $options['projection'][$key] = $show;
             }
         }
-        Log::pushCustomFatalInfo(['lastMql'=> [(array)$conditions, $options]]);
+        Log::pushCustomFatalInfo(['lastMql'=> [(array) $conditions, $options]]);
         $startTime = time();
         /**
          * Perform the find.
          */
         $cursor = $mongoCollection->find($conditions, $options);
         $used = time() - $startTime;
-        $slowTime = Conf::get('Swallow/mongodb/slow_sql_time') ?: 5;
+        $slowTime = $collection->getCollectionManager()->getSlowLogTime($mongoCollection->getDatabaseName());
         if ($slowTime <= $used) {
             Log::warning('slow mongodb query', ['collection' => $source, 'query' => ['$conditions' => $conditions, '$options' => $options], 'used' => $used.'s']);
         }
 
         $cursor->setTypeMap([
-            'root' => get_class($base),
+            'root'     => get_class($base),
             'document' => 'array',
         ]);
         if (true === $unique) {
