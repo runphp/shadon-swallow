@@ -68,4 +68,29 @@ class UserService extends Service
 
         return $this->getResponse($args);
     }
+
+    /**
+     * 更新云信用户信息
+     *
+     * @param string $accid 网易云信id
+     * @param array $userInfo 用户信息
+     * @return array
+     * @uri("user/updateUinfo.action")
+     */
+    public function updateUserInfo($accid, array $userInfo)
+    {
+        $args = [
+            'accid' => $accid,
+        ];
+        !empty($userInfo['name']) && $args['name'] = $userInfo['name'];
+        !empty($userInfo['icon']) && $args['icon'] = $userInfo['icon'];
+        !empty($userInfo['sign']) && $args['sign'] = $userInfo['sign'];
+        !empty($userInfo['email']) && $args['email'] = $userInfo['email'];
+        !empty($userInfo['birth']) && $args['birth'] = $userInfo['birth'];
+        !empty($userInfo['mobile']) && $args['mobile'] = $userInfo['mobile'];
+        !empty($userInfo['gender']) && $args['gender'] = $userInfo['gender'];
+        !empty($userInfo['ex']) && $args['ex'] = $userInfo['ex'];
+
+        return $this->getResponse($args);
+    }
 }
