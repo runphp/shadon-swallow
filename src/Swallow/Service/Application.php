@@ -603,7 +603,6 @@ class Application extends \Phalcon\Mvc\Application
                 $httpClient = new \GuzzleHttp\Client([
                     'http_errors' => false,
                     'verify' => APPLICATION_ENV == 'prod',
-                    'User-Agent' => 'newmall/1.0 '.\GuzzleHttp\default_user_agent(),
                 ]);
                 $arr = explode('\\', $this->serviceName);
                 $url = $config->url->mall.'/service.php?_url=';
@@ -645,7 +644,8 @@ class Application extends \Phalcon\Mvc\Application
                         'client-user-type' => $this->clientUserType,
                         'device-number' => $this->deviceNumber,
                         'client-address' => $this->clientAddress,
-                        'session-id' => $this->sessionId
+                        'session-id' => $this->sessionId,
+                        'User-Agent' => 'newmall/1.0 '.\GuzzleHttp\default_user_agent(),
                     ],
                     'json' => $this->args,
                 ]);

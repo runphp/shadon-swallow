@@ -14,10 +14,10 @@ class Logic extends \Swallow\Di\Injectable
 {
 
     use PublicObject;
-    
+
     /**
      * construct
-     * 
+     *
      * @author 范世军<fanshijun@eelly.net>
      * @since  2015年10月13日
      */
@@ -30,7 +30,7 @@ class Logic extends \Swallow\Di\Injectable
 
     /**
      * @return static
-     * 
+     *
      * @param $isNewInstance
      * @author 何辉<hehui@eely.net>
      * @since  2015年8月26日
@@ -44,10 +44,7 @@ class Logic extends \Swallow\Di\Injectable
         $proxyObject = $proxyObject->setProxyObject($classObj);
         if (APP_DEBUG) {
             $verify = $defaultDi->getShared('\Swallow\Debug\VerifyBack');
-            $verify->callClass($className);            
-            //代码规范检测
-//             $syntaxAnalyzer = $defaultDi->getShared('\Swallow\Debug\Syntax\SyntaxAnalyzer');
-//             $syntaxAnalyzer->init($className);
+            $verify->callClass($className);
         }
         return $proxyObject;
     }
