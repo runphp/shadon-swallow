@@ -39,6 +39,7 @@ use Swallow\Core\Conf;
  * @since 2016年9月30日
  *
  * @version 1.0
+ * @deprecated
  */
 class Manager
 {
@@ -168,6 +169,7 @@ class Manager
      * @author hehui<hehui@eelly.net>
      *
      * @since 2016年10月1日
+     * @deprecated
      */
     public function request(
         $service,

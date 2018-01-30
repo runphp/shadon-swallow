@@ -22,6 +22,7 @@ use Swallow\ThirdParty\Easemob\Exception as EasemobException;
  * @since 2016年10月1日
  *
  * @version 1.0
+ * @deprecated
  */
 class UserService extends AbstractService
 {

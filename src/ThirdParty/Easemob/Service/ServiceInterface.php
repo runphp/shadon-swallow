@@ -11,6 +11,10 @@ namespace Swallow\ThirdParty\Easemob\Service;
 
 use Swallow\ThirdParty\Easemob\Manager;
 
+/**
+ * Interface ServiceInterface
+ * @deprecated
+ */
 interface ServiceInterface
 {
     const POST = 'POST';

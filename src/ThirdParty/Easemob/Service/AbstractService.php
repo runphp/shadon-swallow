@@ -19,6 +19,7 @@ use Swallow\ThirdParty\Easemob\Manager;
  * @since     2016年10月1日
  *
  * @version   1.0
+ * @deprecated
  */
 abstract class AbstractService implements ServiceInterface
 {

@@ -19,6 +19,7 @@ use Swallow\ThirdParty\FastDFS\Client;
  * @since     2016年10月1日
  *
  * @version   1.0
+ * @deprecated
  */
 class ChatFilesService extends AbstractService
 {

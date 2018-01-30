@@ -22,6 +22,7 @@ use Swallow\Exception\SystemException;
  * @since     2016年10月6日
  *
  * @version   1.0
+ * @deprecated
  */
 class Exception extends SystemException
 {
