@@ -44,6 +44,10 @@ class MsgService extends Service
      */
     public function sendMsg($targetType, $from, $to, array $msg, array $ext = [])
     {
+        if (empty($msg['msg'])){
+            $this->log('empty msg ' . json_encode(func_get_args()));
+            return [];
+        }
         $ope = $this->opeArr[$targetType];
         $bodyContent = [
             'msg' => $msg['msg'],
