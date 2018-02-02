@@ -460,26 +460,30 @@ abstract class Mongodb extends Base
         return $this->c->createIndex($keys, $options);
     }
 
-    /**
+   /**
      * 管道操作
      * http://php.net/manual/zh/mongocollection.aggregate.php
      * http://docs.mongodb.org/manual/meta/aggregation-quick-reference/.
      *
      * @param array $pipeline 管道
+     * @param array $options 设置
      *
      * @author zengzhihao<zengzhihao@eelly.net>
      *
      * @since  2015年7月25日
      */
-    public function aggregate(array $pipeline)
+    public function aggregate(array $pipeline, $options = [])
     {
-        $result = $this->c->aggregate($pipeline, [
+        $arrayMap = [
             'typeMap' => [
                 'root'     => 'array',
                 'document' => 'array',
                 'array'    => 'array',
             ],
-        ]);
+        ];
+        !empty($options) && $arrayMap = array_merge($arrayMap, $options);
+        
+        $result = $this->c->aggregate($pipeline, $arrayMap);
 
         return [
             'ok'       => 1.0,
