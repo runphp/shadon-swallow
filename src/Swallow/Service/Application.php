@@ -660,15 +660,11 @@ class Application extends \Phalcon\Mvc\Application
                     ];
                 }
                 // 第二代接口 end
-                /*$res = \Swallow\Toolkit\Net\Service::getInstance($serviceOption)->module($this->serviceName)
-                    ->method($this->method)
-                    ->args($this->args)
-                    ->setNewArgs($option)
-                    ->setIsPhinx($this->isPhinx)
-                    ->exec();*/
                 if ($res['status'] == StatusCode::OK) {
-                    //$res = $res['retval'];
                     $res = $res['data'];
+                    if (is_bool($res)) {
+                        $res = ['result' => $res];
+                    }
                 } else {
                     throw new LogicException($res['info'], $res['status']);
                 }
