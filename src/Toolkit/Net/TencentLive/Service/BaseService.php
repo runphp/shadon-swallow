@@ -44,9 +44,14 @@ class BaseService extends Service
     public function getPushUrl(string $liveId)
     {
         $txTime = strtoupper(base_convert(time() + $this->ttl, 10, 16));
+        // livecode = bizid+"_"+env+"_"+stream_id 如 8888_test_123456
+        // 直播码
+        $livecode = sprintf('%s_%s_%s',
+                $this->bizId,
+                getenv('APPLICATION_ENV') ?: 'prod',
+                $liveId
+            );
         // txSecret = MD5( KEY + livecode + txTime )
-        // livecode = bizid+"_"+stream_id 如 8888_test123456
-        $livecode = $this->bizId . "_" . $liveId; // 直播码
         $txSecret = md5($this->pushKey . $livecode . $txTime);
         $extStr = http_build_query([
             "bizid" => $this->bizId,
@@ -71,7 +76,11 @@ class BaseService extends Service
     public function getPlayUrl(string $liveId)
     {
         $playUrl = [];
-        $liveCode = $this->bizId . "_" . $liveId;
+        $liveCode = sprintf('%s_%s_%s',
+                $this->bizId,
+                getenv('APPLICATION_ENV') ?: 'prod',
+                $liveId
+            );
         foreach ($this->playUrl as $type => $url){
             $playUrl[$type] = sprintf($url,
                     $this->bizId,
