@@ -14,6 +14,8 @@ declare(strict_types=1);
 namespace Swallow\Toolkit\Net\NeteaseIm;
 
 use Whoops\Exception\ErrorException;
+use Monolog\Logger;
+use Monolog\Handler\StreamHandler;
 
 /**
  * 网易云信聊天室
@@ -208,6 +210,66 @@ class ChatRoomService extends Service
             'accid' => $accid,
             'clienttype' => $clienttype,
         ];
+
+        return $this->getResponse($args);
+    }
+
+    /**
+     * 发送聊天室消息
+     *
+     * @param int $roomid 聊天室id
+     * @param string $msgId 客户端消息id，使用uuid等随机串，msgId相同的消息会被客户端去重
+     * @param string $fromAccid 消息发出者的账号accid
+     * @param int $msgType 消息类型：
+     * 0: 表示文本消息，
+     * 1: 表示图片，
+     * 2: 表示语音，
+     * 3: 表示视频，
+     * 4: 表示地理位置信息，
+     * 6: 表示文件，
+     * 10: 表示Tips消息，
+     * 100: 自定义消息类型（特别注意，对于未对接易盾反垃圾功能的应用，该类型的消息不会提交反垃圾系统检测）
+     * @param int $resendFlag 重发消息标记，0：非重发消息，1：重发消息，如重发消息会按照msgid检查去重逻辑
+     * @param string $attach 消息内容，格式同消息格式示例中的body字段,长度限制4096字符
+     * @param string $ext 消息扩展字段，内容可自定义，请使用JSON格式，长度限制4096字符
+     * @param string $antispam 对于对接了易盾反垃圾功能的应用，本消息是否需要指定经由易盾检测的内容（antispamCustom
+     * @param string $antispamCustom 在antispam参数为true时生效。
+     * @param int $skipHistory 是否跳过存储云端历史，0：不跳过，即存历史消息；1：跳过，即不存云端历史；默认0
+     * @param string $bid 反垃圾业务ID，实现“单条消息配置对应反垃圾”，若不填则使用原来的反垃圾配置
+     * @param string $highPriority true表示是高优先级消息，云信会优先保障投递这部分消息；false表示低优先级消息。默认false
+     * @return mixed
+     * @uri("chatroom/sendMsg.action")
+     * @see http://dev.netease.im/docs/product/IM即时通讯/服务端API文档/聊天室?#发送聊天室消息
+     */
+    public function sendMsg(
+        int $roomid,
+        string $msgId,
+        string $fromAccid,
+        int $msgType,
+        int $resendFlag,
+        string $attach = '',
+        string $ext = '',
+        string $antispam = 'false',
+        string $antispamCustom = '',
+        int $skipHistory = 0,
+        string $bid = '',
+        string $highPriority = 'false'
+    ) {
+        $args = [
+            'roomid' => $roomid,
+            'msgId' => $msgId,
+            'fromAccid' => $fromAccid,
+            'msgType' => $msgType,
+            'resendFlag' => $resendFlag,
+            'attach' => $attach,
+            'ext' => $ext,
+            'antispam' => $antispam,
+            'antispamCustom' => $antispamCustom,
+            'skipHistory' => $skipHistory,
+            'bid' => $bid,
+            'highPriority' => $highPriority,
+        ];
+        $this->log(json_encode($args));
 
         return $this->getResponse($args);
     }
@@ -442,5 +504,26 @@ class ChatRoomService extends Service
         !empty($ext) && $args['ext'] = $ext;
 
         return $this->getResponse($args);
+    }
+
+    /**
+     * @param string $message
+     *
+     * @return \Monolog\Boolean
+     *
+     * @author hehui<hehui@eelly.net>
+     *
+     * @since  2017年3月7日
+     */
+    private function log($message)
+    {
+        dump($message);
+        static $logger;
+        if (null === $logger) {
+            $logger = new Logger('easemob');
+            $logger->pushHandler(new StreamHandler(LOG_PATH.'/chatRoomMsg.'.date('Ymd').'.txt', Logger::INFO));
+        }
+
+        return $logger->info($message);
     }
 }

@@ -108,8 +108,7 @@ class Service extends Injectable
         static $logger;
         if (null === $logger) {
             $logger = new Logger('tencentLive');
-            $logPath = $this->getDI()->getConfig()->logPath;
-            $logger->pushHandler(new StreamHandler($logPath.'/Live.'.date('Ymd').'.txt', Logger::INFO));
+            $logger->pushHandler(new StreamHandler(LOG_PATH.'/Live.'.date('Ymd').'.txt', Logger::INFO));
         }
         $res = $logger->info($message);
 
