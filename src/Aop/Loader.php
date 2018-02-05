@@ -234,7 +234,7 @@ class Loader
                     $class = (string) $param->getType().' ';
                 }
                 $paramsArgs .= ','.$class.$tmp.$param->name.
-                     ($param->isDefaultValueAvailable() ? ('='.var_export($param->getDefaultValue(), true)) : '');
+                    ($param->isDefaultValueAvailable() ? ('='.var_export($param->getDefaultValue(), true)) : '');
                 $paramsCall .= ',\''.$param->name.'\'=>'.$tmp.$param->name;
                 $callbackArgs .= ',$args[\''.$param->name.'\']';
                 $paramsCount++;
@@ -249,7 +249,7 @@ class Loader
             if ($returnType = $method->getReturnType()) {
                 $content .= ': '.$returnType;
             }
-            $content .= PHP_EOL.'    {       return Proxy::invoke($this,\''.$method->name.'\',function($args) {';
+            $content .= PHP_EOL.'    {       '.(('void' == $returnType) ? '' : 'return').' Proxy::invoke($this,\''.$method->name.'\',function($args) {';
             $content .= PHP_EOL.'            return '.$classed.$method->name.'('.$callbackArgs.');';
             $content .= PHP_EOL.'        }, ['.$paramsCall.'],['.$aops.']);';
             $content .= PHP_EOL.'    }';
