@@ -299,8 +299,8 @@ class ChatRoomService extends Service
             'roomid' => $roomid,
             'accids' => $accids,
         ];
-        !empty($roleExt) && $args['roleExt'];
-        !empty($notifyExt) && $args['notifyExt'];
+        !empty($roleExt) && $args['roleExt'] = $roleExt;
+        !empty($notifyExt) && $args['notifyExt'] = $notifyExt;
 
         return $this->getResponse($args);
     }
@@ -517,7 +517,7 @@ class ChatRoomService extends Service
      */
     private function log($message)
     {
-        dump($message);
+//         dump($message);
         static $logger;
         if (null === $logger) {
             $logger = new Logger('easemob');
