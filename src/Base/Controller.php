@@ -65,7 +65,7 @@ abstract class Controller extends Base
     /**
      *
      * @param object $app
-     * @return self
+     * @return static
      */
     public static function getInstance($app = null)
     {
