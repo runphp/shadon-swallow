@@ -98,6 +98,9 @@ class CacheListener extends AbstractListener
             return true;
         }
         if ($collection->has(self::ANNOTATION_NAME)) {
+            if ('no-cache' == $this->request->getHeader('Cache-Control')) {
+                return true;
+            }
             $key = $this->cacheKey($class, $method, $params);
             try {
                 $value = $this->backend->get($key);
