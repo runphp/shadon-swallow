@@ -193,7 +193,7 @@ class VerifyCodeStandard
             if (substr($docComment, 0, 3) != '/**' || substr($docComment, -2) != '*/') {
                 $msgStatus = true;
             }
-            $docArr = ['@author', '@since', '@version'];
+            $docArr = ['@author', '@since'];
             $pos = 0;
             foreach ($docArr as $doc) {
                 $pos = strpos($docComment, $doc, $pos);
