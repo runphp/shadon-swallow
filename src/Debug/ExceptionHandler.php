@@ -1,23 +1,21 @@
 <?php
+
 /*
  * PHP version 5.5
  *
- * @copyright Copyright (c) 2012-2017 EELLY Inc. (http://www.eelly.com)
- * @link      http://www.eelly.com
- * @license   衣联网版权所有
+ * @copyright  Copyright (c) 2012-2015 EELLY Inc. (http://www.eelly.com)
+ * @link       http://www.eelly.com
+ * @license    衣联网版权所有
  */
-
 namespace Swallow\Debug;
 
-use Swallow\Error\Handler as ErrorHandler;
+use Phalcon\DI;
 
 /**
- * 对异常处理进行封装输出(方便调试).
+ * 对异常处理进行封装输出(方便调试)
  *
  * @author    何辉<hehui@eely.net>
- *
  * @since     2015年8月25日
- *
  * @version   1.0
  */
 class ExceptionHandler implements \Swallow\Bootstrap\BootstrapInterface
@@ -31,7 +29,7 @@ class ExceptionHandler implements \Swallow\Bootstrap\BootstrapInterface
     ];
 
     /**
-     * Sets the dependency injector.
+     * Sets the dependency injector
      *
      * @param mixed $dependencyInjector
      */
@@ -41,10 +39,10 @@ class ExceptionHandler implements \Swallow\Bootstrap\BootstrapInterface
     }
 
     /**
-     * Returns the internal dependency injector.
+     * Returns the internal dependency injector
      *
      * @return \Phalcon\DiInterface
-     */
+    */
     public function getDI()
     {
         return $this->di;
@@ -52,9 +50,7 @@ class ExceptionHandler implements \Swallow\Bootstrap\BootstrapInterface
 
     public function bootStrap()
     {
-        return ErrorHandler::register();
-
-        error_reporting(-1);
+        error_reporting(- 1);
         set_error_handler([$this, 'handleError']);
         set_exception_handler([$this, 'handleException']);
         register_shutdown_function([$this, 'handleShutdown']);
@@ -71,8 +67,9 @@ class ExceptionHandler implements \Swallow\Bootstrap\BootstrapInterface
         try {
             $type = $di->getConfig()->debug->tool;
         } catch (\Exception $e) {
+
         }
-        if (!array_key_exists($type, $this->tools)) {
+        if (! array_key_exists($type, $this->tools)) {
             $type = 'symfony';
         }
         call_user_func([$this, $this->tools[$type]], $exception);
@@ -89,21 +86,21 @@ class ExceptionHandler implements \Swallow\Bootstrap\BootstrapInterface
     public function handleException($e)
     {
         // 日志记录
-        $msg = '#message: '.$e->getMessage()."\n";
+        $msg  = '#message: '.$e->getMessage()."\n";
         $msg .= '#code: '.$e->getCode()."\n";
         $msg .= '#file: '.$e->getFile()."\n";
         $msg .= '#line: '.$e->getLine()."\n";
         $msg .= '#trace: '.$e->getTraceAsString()."\n";
         $path = $this->di->getConfig()->path->errorLog;
-        if (!file_exists($path)) {
+        if (! file_exists($path)) {
             mkdir($path, 0744, true);
         }
         $application = $this->getDI()->getApplication();
         $appType = $application::APP_TYPE;
-        $filePath = $path.'/'.$appType.'_error_'.date('Ymd').'.log';
+        $filePath = $path . '/' . $appType . '_error_' . date('Ymd') . '.log';
         $logger = new \Phalcon\Logger\Adapter\File($filePath);
         // 修改日志格式
-        $date = date('Y-m-d H:i:s');
+        $date = date("Y-m-d H:i:s");
         $formatter = new \Phalcon\Logger\Formatter\Line("[$date][ERROR]\n%message%");
         $logger->setFormatter($formatter);
         $logger->error($msg);
@@ -113,15 +110,15 @@ class ExceptionHandler implements \Swallow\Bootstrap\BootstrapInterface
             $this->render($e);
         } else {
             $response = new \Phalcon\Http\Response();
-            $response->setStatusCode(500, 'Internal PHP Server Error');
-            $response->setContent('Internal PHP Server Error');
+            $response->setStatusCode(500, "Internal PHP Server Error");
+            $response->setContent("Internal PHP Server Error");
             $response->send();
         }
     }
 
     public function handleShutdown()
     {
-        if (null !== ($error = error_get_last()) && $this->isFatal($error['type'])) {
+        if (! is_null($error = error_get_last()) && $this->isFatal($error['type'])) {
             $this->handleException($this->fatalExceptionFromError($error, 0));
         }
     }
@@ -138,8 +135,6 @@ class ExceptionHandler implements \Swallow\Bootstrap\BootstrapInterface
 
     /**
      * use whoops.
-     *
-     * @param mixed $e
      */
     private function handleExceptionByWhoops($e)
     {
@@ -157,19 +152,19 @@ class ExceptionHandler implements \Swallow\Bootstrap\BootstrapInterface
                 return;
             }
             // Request info:
-            $errorPageHandler->addDataTable('Phalcon Application (Request)', [
-                'URI' => $request->getScheme().'://'.$request->getServer('HTTP_HOST').$request->getServer('REQUEST_URI'),
+            $errorPageHandler->addDataTable('Phalcon Application (Request)', array(
+                'URI'         => $request->getScheme().'://'.$request->getServer('HTTP_HOST').$request->getServer('REQUEST_URI'),
                 'Request URI' => $request->getServer('REQUEST_URI'),
-                'Path Info' => $request->getServer('PATH_INFO'),
+                'Path Info'   => $request->getServer('PATH_INFO'),
                 'Query String' => $request->getServer('QUERY_STRING') ?: '<none>',
                 'HTTP Method' => $request->getMethod(),
                 'Script Name' => $request->getServer('SCRIPT_NAME'),
                 //'Base Path'   => $request->getBasePath(),
                 //'Base URL'    => $request->getBaseUrl(),
-                'Scheme' => $request->getScheme(),
-                'Port' => $request->getServer('SERVER_PORT'),
-                'Host' => $request->getServerName(),
-            ]);
+                'Scheme'      => $request->getScheme(),
+                'Port'        => $request->getServer('SERVER_PORT'),
+                'Host'        => $request->getServerName(),
+            ));
         }
         $run->pushHandler($errorPageHandler);
         echo $run->handleException($e);
@@ -177,8 +172,6 @@ class ExceptionHandler implements \Swallow\Bootstrap\BootstrapInterface
 
     /**
      * use symfony debug.
-     *
-     * @param mixed $e
      */
     private function handleExceptionBySymfony($e)
     {
@@ -189,8 +182,6 @@ class ExceptionHandler implements \Swallow\Bootstrap\BootstrapInterface
 
     /**
      * use phalcon debug.
-     *
-     * @param mixed $e
      */
     private function handleExceptionByPhalcon($e)
     {

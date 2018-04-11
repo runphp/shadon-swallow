@@ -75,11 +75,6 @@ class VerifySql implements \Phalcon\Di\InjectionAwareInterface
             throw new \Exception('SQL查询禁用正则：' . $sql);
         }
         
-/*
-        if (!preg_match('/\slimit\s/i', $sql)) {
-            throw new \Exception('SQL缺少LIMIT：' . $sql);
-        }
- */
         preg_match_all('/' . $prefix . '\w+/i', $sql, $matchs);
         if (empty($matchs[0])) {
             throw new \Exception('SQL查询不包含任何表：' . $sql);

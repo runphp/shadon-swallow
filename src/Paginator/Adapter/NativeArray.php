@@ -75,7 +75,7 @@ class NativeArray extends \Phalcon\Paginator\Adapter\NativeArray
         $pageNumber <= 0 && $pageNumber = 1;
         
         $rowcount = $this->_totalRows;
-        $totalPages = $rowcount / $this->_limitRows;
+        $totalPages = ceil($rowcount / $this->_limitRows);
         
         $next = $pageNumber < $totalPages ? $pageNumber + 1 : $totalPages;
         

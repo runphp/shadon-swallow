@@ -61,7 +61,7 @@ class View extends \Phalcon\Mvc\View
 
     /**
      * 获取赋值参数
-     * 
+     *
      * @author 范世军<fanshijun@eelly.net>
      * @since  2015年10月12日
      */
@@ -69,7 +69,7 @@ class View extends \Phalcon\Mvc\View
     {
         return $this->_viewParams;
     }
-    
+
     /**
      * _pickView
      *

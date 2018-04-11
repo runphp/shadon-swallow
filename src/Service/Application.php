@@ -314,10 +314,10 @@ class Application extends \Phalcon\Mvc\Application
             }else if ($this->encrypt && $this->desCrypt != null) {
                 $retval = json_encode($retval);
                 $retval = $this->desCrypt->encrypt($retval);
+                !empty($this->encryptVersion) && $this->encryptVersion == 'v2' && $retval = base64_encode($retval);
+            }
                 //生成签名
                 $signature = $this->signature(json_encode($retval));
-                //!empty($this->encryptVersion) && $this->encryptVersion == 'v2' && $retval = base64_encode($retval);
-            }
         }
         $data['retval'] = ['data' => $retval, 'signature' => $signature];
         if (!$this->isRemoveEncrypt && APPLICATION_ENV != 'prod' && 0 == time() % 3) {
@@ -515,14 +515,11 @@ class Application extends \Phalcon\Mvc\Application
                     ! empty($this->client) && $class = str_replace('\\Service\\', '\\Service\\' . $this->client . '\\', $class);
                     $isOld = true;
                 }
-                //newmall的接口在非DEBUG模式下才校验
                 if (! $isOld) {
                     $logicName = str_replace('\\Service\\', '\\Logic\\', $class);
                     $logicName = preg_replace('/Service$/', 'Logic', $logicName);
-                    if(!APP_DEBUG){
-                        $this->verifyClass($class, $logicName); //验证类
-                        $this->verifyMethod($logicName, $this->method); //验证方法
-                    }
+                    $this->verifyClass($class, $logicName); //验证类
+                    $this->verifyMethod($logicName, $this->method); //验证方法
                 }
 
                 //模块调模块，不验证
@@ -540,59 +537,6 @@ class Application extends \Phalcon\Mvc\Application
 
             // 接口系统不再校验登录，只用作日志记录
             !empty($this->userLoginToken) && $this->verifyLogin(['user_login_token' => $this->userLoginToken]);
-            // 过滤没有审核通过的接口  返回示例值
-            if (APP_DEBUG) {
-                // 接口返回示例值的时间限制
-                $minDate = '2016-06-14 10:00:00';
-
-                if (!$isMore) {
-                    $nodeInfo = NodeLogic::getInstance()->getNodeInfoByServiceMethod($this->serviceName, $this->requestDataDecrypt['method'], $version);
-
-                    // 接口信息不存在
-                    if (empty($nodeInfo)) {
-                        throw new LogicException($this->serviceName.'服务不存在', 404);
-                    }
-                    // 未通过审核的接口返回示例值
-                    if ($nodeInfo && $nodeInfo['status'] == 0 && $nodeInfo['updateTime'] > $minDate) {
-                        $retval['retval'] = json_decode(preg_replace("/\/\*\*([\s\S.])+?\*\*\//", '', $nodeInfo['sample_value']), true);
-                        $retval['info'] = $retval['info'].'___示例数据';
-                        return $retval;
-                    } elseif ($nodeInfo['status'] == 0) {
-                        // 接口系统示例值修改时间前的 返回没有权限访问
-                        throw new LogicException('你没权限访问！', StatusCode::REQUEST_FORBIDDEN);
-                    }
-                } else {
-                    // 多接口调用 需要检查每一个返回值
-                    foreach ($this->args['params'] as $key => $arg) {
-                        $nodeInfo = NodeLogic::getInstance()->getNodeInfoByServiceMethod($arg['module'], $arg['method'], $version);
-
-                        if (empty($nodeInfo)) {
-                            throw new LogicException($arg['module'] . '\\' . $arg['method'] . '服务不存在', 404);
-                        }
-
-                        if ($nodeInfo && $nodeInfo['status'] == 0 && $nodeInfo['updateTime'] > $minDate) {
-                            $retval['retval'][$key] = json_decode($nodeInfo['sample_value'], true);
-                            $retval['info'] = $retval['info'].'_'.$key.':示例数据';
-                            unset($this->args['params'][$key]);
-                        } elseif ($nodeInfo['status'] == 0) {
-                            // 接口系统示例值修改时间前的 返回没有权限访问
-                            throw new LogicException('你没权限访问！', StatusCode::REQUEST_FORBIDDEN);
-                        }
-                    }
-
-                    // 如果全部是未审核的接口 直接返回
-                    if (empty($this->args['params'])) {
-                        return $retval;
-                    }
-                }
-            }
-
-            // 验证超时
-            /*if ($this->timeStamp < $this->sysTimeStamp - self::$expirationTime || $this->timeStamp > $this->sysTimeStamp + self::$expirationTime) {
-                $this->debugInfo = $this->serviceName . '/' . $this->requestDataDecrypt['method'] . '/this.timeStamp =' . $this->timeStamp . ',time()=' . $this->sysTimeStamp;
-                throw new LogicException("Timeout！", StatusCode::REQUEST_TIME_OUT);
-            }*/
-
             if ($isOld) {
                 // 过渡版本 : android和ios客户端，厂+版本2.2.0，店+版本4.3.0之前的版本
                 $isTransition   = in_array(strtolower($this->clientName), ['ios', 'android']) && (($this->clientUserType == 'buyer' && $this->clientVersion < 430) || ($this->clientUserType == 'seller' && $this->clientVersion < 220));
@@ -685,18 +629,8 @@ class Application extends \Phalcon\Mvc\Application
                 $res = call_user_func_array([$class, $this->method], $argsNew);
             }
 
-            // 记录API调用的结果
-            if (APP_DEBUG) {
-                if (!$isMore) {
-                    ApiResultHistoryLogic::getInstance()->validateApiRet($this->serviceName, $this->method, $version, $res);
-                } else {
-                    foreach($this->args['params'] as $key => $arg) {
-                        ApiResultHistoryLogic::getInstance()->validateApiRet($arg['module'], $arg['method'], $version, $res[$key]);
-                    }
-                }
-            }
+            $retval['retval'] = $res;
 
-            $retval['retval'] = $retval['retval'] ? array_merge($retval['retval'], $res) : $res;
         } catch (LogicException $e) {
             $retval['info'] = $e->getMessage();
             $retval['status'] = $e->getCode();
@@ -799,11 +733,7 @@ class Application extends \Phalcon\Mvc\Application
             }
         }
 
-        // 在DEBUG模式下没有审核通过的不限制访问
-        if(!APP_DEBUG) {
-            throw new LogicException('你没权限访问！', StatusCode::REQUEST_FORBIDDEN);
-        }
-        return false;
+        throw new LogicException('你没权限访问！', StatusCode::REQUEST_FORBIDDEN);
     }
 
     /**
@@ -911,29 +841,8 @@ class Application extends \Phalcon\Mvc\Application
         }
         $tokenInfo = self::$tokenConfig;
         return ;
-        unset($tokenInfo['app_auth']);
-        $logger = $this->getDI()->getLogger();
 
-        //记录每次请求信息，如果是非200的正常返回，多记录返回给用户看的数据
-        $serviceLogPath = $this->getDI()->getConfig()->path->serviceLog;
-        $logDir = $serviceLogPath.'/' . $tokenInfo['app_name'] . '/' . date('Ym') . '/' . date('Ymd');
-        $logName = $data['status'] == 200 ? 'app_access_200'. '_' . date('Ymd_H') : 'app_access_' . $data['status'] . '_' . date('Ymd_H');
-        $logStr['access_token_info'] = $tokenInfo;
-        $logStr['user_login_info'] = $this->userLoginInfo;
-        $logStr['request_param'] = $this->requestDataDecrypt;
-        //APP_DEBUG 模式开启数据记录
-        $logStr['return_data'] = ($data['status'] == 200 && !APP_DEBUG ) ? '[正常数据,隐藏]' : $data;
-        //不是正常返回200的，额外记录一些调试信息
-        ($data['status'] != 200 || !empty($this->debugInfo)) && $logStr['exception_debug_info'] = $this->debugInfo;
-        $logStr = PHP_EOL .var_export($logStr, true);
 
-        //按uid划分日志
-        if (\Phalcon\Di::getDefault()->getConfig()->isUserLog && isset($this->userLoginInfo['uid'])) {
-            $logDir = $serviceLogPath.'/' . $tokenInfo['app_name'] . '/uid_' . $this->userLoginInfo['uid'] . '/' . date('Ym') . '/' . date('Ymd');
-            $logger->setDir($logDir)->setName($logName)->record($logStr)->save();
-        } else {
-            $logger->setDir($logDir)->setName($logName)->record($logStr)->save();
-        }
     }
 
     /**

@@ -9,8 +9,6 @@
 namespace Swallow\Mvc;
 
 use Swallow\Traits\PublicObject;
-use Swallow\Exception\DbException;
-use Swallow\Exception\StatusCode;
 
 /**
  * 模块基类
@@ -21,9 +19,9 @@ use Swallow\Exception\StatusCode;
  */
 class Model extends \Phalcon\Mvc\Model
 {
-    
+
     use PublicObject;
-    
+
     /**
      * @var $dbService
      */
@@ -31,7 +29,7 @@ class Model extends \Phalcon\Mvc\Model
 
     /**
      * 创建模型对象
-     * 
+     *
      * @param string $params
      * @return \Phalcon\Mvc\Model\Query\BuilderInterface
      * @author 范世军<fanshijun@eelly.net>
@@ -46,7 +44,7 @@ class Model extends \Phalcon\Mvc\Model
 
     /**
      * @return static
-     * 
+     *
      * @param $isNewInstance
      * @author 范世军<fanshijun@eelly.net>
      * @since  2015年10月13日
@@ -59,16 +57,13 @@ class Model extends \Phalcon\Mvc\Model
         if (APP_DEBUG) {
             $verify = $defaultDi->getShared('\Swallow\Debug\VerifyBack');
             $verify->callClass($className);
-            //代码规范检测
-//             $syntaxAnalyzer = $defaultDi->getShared('\Swallow\Debug\Syntax\SyntaxAnalyzer');
-//             $syntaxAnalyzer->init($className);
         }
         return $modelObj;
     }
 
     /**
      * 初始化
-     * 
+     *
      * @author 范世军<fanshijun@eelly.net>
      * @since  2015年10月13日
      */
@@ -77,7 +72,7 @@ class Model extends \Phalcon\Mvc\Model
         $defaultDi = $this->getDI();
         $dbMaster = 'dbMaster';
         $dbSlave = 'dbSlave';
-        
+
         $className = static::class;
         $module = strtolower(explode('\\', $className)[0]);
         if (! isset($defaultDi[$dbMaster . $module])) {
@@ -106,7 +101,7 @@ class Model extends \Phalcon\Mvc\Model
             $dbSlave .= $module;
         }
         $this->dbService = $dbMaster;
-        
+
         $this->getModelsManager()->setDI($defaultDi);
         $this->setWriteConnectionService($dbMaster);
         $this->setReadConnectionService($dbSlave);
@@ -122,7 +117,7 @@ class Model extends \Phalcon\Mvc\Model
     public function selectReadConnection($intermediate, $bindParams, $bindTypes)
     {
         $tableNames = $intermediate['tables'];
-        array_walk($tableNames, 
+        array_walk($tableNames,
             function (&$item)
             {
                 if (is_array($item)) {
@@ -150,52 +145,10 @@ class Model extends \Phalcon\Mvc\Model
      dd($this->getWriteConnectionService());
      dd($intermediate);
      } */
-    
-    /**
-     * 说明:选择一个列值的数据
-     *
-     * @param string $field
-     * @return array|bool
-     */
-    public function getFieldOne($field)
-    {
-        $arr=$this->getField($field);
-        if($arr!=false){
-            return current($arr);
-        }else{
-            return false;
-        }
-    }
-    
-    /**
-     * 返回一个包含返回结果的某个字段数组
-     *
-     * @param $sql
-     * @param $field
-     * @param $index
-     * @author 范世军<fanshijun@eelly.net>
-     * @since  2015年10月29日
-     * @return array
-     */
-    public function getField($sql, $field, $index = '')
-    {
-        if(empty($field)){
-            throw new DbException('参数错误！', StatusCode::BAD_REQUEST);
-        }
-        $result = $this->getWriteConnection()->fetchAll($sql);
-        if (! empty($result) && is_array($result)) {
-            if (empty(trim($index))) {
-                $result = array_column($result, $field);
-            } else {
-                $result = array_column($result, $field, $index);
-            }
-        }
-        return $result;
-    }
-    
+
     /**
      * 返回一个包含返回结果的数组
-     * 
+     *
      * @param $sql
      * @param $index
      * @author 范世军<fanshijun@eelly.net>
@@ -233,7 +186,7 @@ class Model extends \Phalcon\Mvc\Model
     {
         return $this->getWriteConnection()->fetchOne($sql);
     }
-    
+
     /**
      * 执行
      *
@@ -245,7 +198,7 @@ class Model extends \Phalcon\Mvc\Model
     {
         return $this->getWriteConnection()->query($sql);
     }
-    
+
     /**
      * 返回最后插入自增id
      *
@@ -256,7 +209,7 @@ class Model extends \Phalcon\Mvc\Model
     {
         return $this->getWriteConnection()->lastInsertId($this->getSource());
     }
-    
+
     /**
      * 返回最后sql
      *
@@ -268,7 +221,7 @@ class Model extends \Phalcon\Mvc\Model
         $outputSql = $this->getDI()->getShared('Swallow\Debug\OutputSql');
         return $outputSql->getLastSql();
     }
-    
+
     /**
      * 返回所有sql
      *

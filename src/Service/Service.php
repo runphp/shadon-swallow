@@ -49,9 +49,6 @@ class Service extends \Swallow\Di\Injectable
         if (APP_DEBUG) {
             $verify = $defaultDi->getShared('\Swallow\Debug\VerifyBack');
             $verify->callClass($className);
-            //代码规范检测
-//             $syntaxAnalyzer = $defaultDi->getShared('\Swallow\Debug\Syntax\SyntaxAnalyzer');
-//             $syntaxAnalyzer->init($className);            
         }
         return $service;
     }

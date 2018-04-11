@@ -37,8 +37,6 @@ class ClearCache extends \Swallow\Di\Injectable
         $clear = $this->getDI()->getRequest()->get('clear');
         $clear = $clear == 'cache';
         $isWhiteList = in_array($ip, $config['whiteList']);
-//        $isInternalUser = isset($_ENV['isInternalUser']) && $_ENV['isInternalUser'] === true;
-        // 用于test上清缓存
         $isInternalUser = empty(getenv('isInternalUser')) ? false : true;
         if ($clear && (APP_DEBUG || $isWhiteList || $isInternalUser)) {
             $rs = true;

@@ -339,21 +339,6 @@ class VerifyCode implements \Phalcon\Di\InjectionAwareInterface
                     break;
                 }
             }
-
-            $docArr = array('@author', '@since');
-            $pos = 0;
-            foreach ($docArr as $doc) {
-                $pos = strpos($docComment, $doc, $pos);
-                if (! $pos) {
-                    $msgStatus = true;
-                    break;
-                }
-            }
-            
-            if ($msgStatus) {
-                throw new \Exception(self::$className . '：类的 ' . $name . ' 方法的注释不符合规则！');
-            }
-            
         } else {
             throw new \Exception(self::$className . '：方法 ' . $name . ' 的注释不存在！');
         }
