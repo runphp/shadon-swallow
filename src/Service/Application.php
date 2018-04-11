@@ -841,8 +841,6 @@ class Application extends \Phalcon\Mvc\Application
         }
         $tokenInfo = self::$tokenConfig;
         return ;
-
-
     }
 
     /**

@@ -46,7 +46,7 @@ class Strings
         }
         return substr(str_shuffle($chars), 0, $len);
     }
-    
+
     /**
      * Utf-8 gb2312都支持的汉字截取函数 cutStr(字符串, 截取长度, 开始长度, 编码)
      *
@@ -62,7 +62,7 @@ class Strings
             $t_string = [];
             $pa = "/[\x01-\x7f]|[\xc2-\xdf][\x80-\xbf]|\xe0[\xa0-\xbf][\x80-\xbf]|[\xe1-\xef][\x80-\xbf][\x80-\xbf]|\xf0[\x90-\xbf][\x80-\xbf][\x80-\xbf]|[\xf1-\xf7][\x80-\xbf][\x80-\xbf][\x80-\xbf]/";
             preg_match_all($pa, $string, $t_string);
-    
+
             if (count($t_string[0]) - $start > $sublen)
                 return join('', array_slice($t_string[0], $start, $sublen)) . "...";
             return join('', array_slice($t_string[0], $start, $sublen));
@@ -71,7 +71,7 @@ class Strings
             $sublen = $sublen * 2;
             $strlen = strlen($string);
             $tmpstr = '';
-    
+
             for ($i = 0; $i < $strlen; $i ++) {
                 if ($i >= $start && $i < ($start + $sublen)) {
                     $tmpstr = ord(substr($string, $i, 1)) > 129 ? $tmpstr . substr($string, $i, 2) : $tmpstr . substr($string, $i, 1);
@@ -79,10 +79,11 @@ class Strings
                 if (ord(substr($string, $i, 1)) > 129)
                     $i ++;
             }
-    
+
             if (strlen($tmpstr) < $strlen)
                 $tmpstr .= "...";
             return $tmpstr;
         }
     }
+
 }

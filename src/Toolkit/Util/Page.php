@@ -170,16 +170,6 @@ class Page
                 }
             }
         }
-//         var_dump(array(
-//                 Page::$config['header'], 
-//                 $page->current, 
-//                 $up_page, 
-//                 $down_page, 
-//                 $the_first, 
-//                 $link_page, 
-//                 $the_end, 
-//                 $page->total_items, 
-//                 $page->total_pages));exit;
         //替换分页内容
         $page_str = str_replace(
             array('%HEADER%', '%NOW_PAGE%', '%UP_PAGE%', '%DOWN_PAGE%', '%FIRST%', '%LINK_PAGE%', '%END%', '%TOTAL_ROW%', '%TOTAL_PAGE%'), 
