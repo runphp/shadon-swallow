@@ -190,7 +190,7 @@ class DesCrypt
      * @author zengzhihao<zengzhihao@eelly.net>
      * @since  2015年11月25日
      */
-    public static function userEncrypt($data, $key = "%query%\0")
+    public static function userEncrypt($data, $key = '%query%')
     {
         $prep_code = serialize($data);
         $block = mcrypt_get_block_size('des', 'ecb');

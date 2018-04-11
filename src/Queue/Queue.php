@@ -65,10 +65,6 @@ class Queue
      */
     public function __construct($options = array())
     {
-        if(empty($options)){
-            $di = \Phalcon\Di::getDefault();
-            $options = $di->getConfig()->queue->toArray();
-        }
         $this->options = $options;
         $host = isset($options['host']) ? $options['host'] : '127.0.0.1';
         $port = isset($options['port']) ? $options['port'] : 5672;
@@ -134,23 +130,6 @@ class Queue
     }
 
     /**
-     * 设置对列名和交换机
-     * 对于旧的队列，队列名和交换机是一样的
-     *
-     * @param string $keyName
-     *
-     * @author lanchuwei<lanchuwei@eelly.net>
-     * @since 2016年02月18日
-     */
-    public function setQueueAndExchangeName($keyName)
-    {
-        if (! empty($keyName)) {
-            $this->queueName = $this->exchangeName = $keyName;
-        }
-        return $this;
-    }
-
-    /**
      * 发送
      * 
      * string|array $data
@@ -164,7 +143,7 @@ class Queue
         }
         $data = is_array($data) ? json_encode($data) : json_encode([$data]);
         $this->channel = $this->connection->channel();
-        $this->channel->queue_declare($this->queueName, false, true, false, true);
+        $this->channel->queue_declare($this->queueName, false, true, false, false);
         $this->channel->exchange_declare($this->exchangeName, $this->exchangeType, false, true, false);
         $this->channel->queue_bind($this->queueName, $this->exchangeName);
         $msg = new AMQPMessage($data, array('content_type' => 'application/json', 'delivery_mode' => 2));
@@ -175,21 +154,18 @@ class Queue
     /**
      * receive task
      *
+     * @param string $routingKey
      * @return array
      */
     public function receive()
     {
         $this->channel = $this->connection->channel();
-        $this->channel->queue_declare($this->queueName, false, true, false, true);
+        $this->channel->queue_declare($this->queueName, false, true, false, false);
         $this->channel->exchange_declare($this->exchangeName, $this->exchangeType, false, true, false);
         $this->channel->queue_bind($this->queueName, $this->exchangeName);
         $msg = $this->channel->basic_get($this->queueName);
-        $return = null;
-        if(!empty($msg)){
-            $this->channel->basic_ack($msg->delivery_info['delivery_tag']);
-            $return = json_decode($msg->body, true);
-        }
-        return $return;
+        $this->channel->basic_ack($msg->delivery_info['delivery_tag']);
+        return json_decode($msg->body, true);
     }
 
     /**
@@ -202,7 +178,7 @@ class Queue
     public function consume($callback, $noAck = false)
     {
         $this->channel = $this->connection->channel();
-        $this->channel->queue_declare($this->queueName, false, true, false, true);
+        $this->channel->queue_declare($this->queueName, false, true, false, false);
         $this->channel->exchange_declare($this->exchangeName, $this->exchangeType, false, true, false);
         $this->channel->queue_bind($this->queueName, $this->exchangeName);
         $this->channel->basic_consume($this->queueName, $this->consumerTag, false, $noAck, false, false, $callback);

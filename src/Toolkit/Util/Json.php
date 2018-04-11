@@ -136,16 +136,4 @@ class Json
             return $obj;
         }
     }
-    
-    /**
-     * 
-     * @param mixed $value the data to be encoded.
-     * @param int $options the encoding options. For more details please refer to
-     * <http://www.php.net/manual/en/function.json-encode.php>. Default is `JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE`.
-     * @return string the encoding result.
-     */
-    public static function encode($value, $options = 320)
-    {
-        return json_encode($value, $options);;
-    }
 }

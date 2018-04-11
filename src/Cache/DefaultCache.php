@@ -57,16 +57,4 @@ class DefaultCache
     {
         return \Phalcon\Di::getDefault()->get('cacheManager')->getServer(['type'=>'login'], $this->config);
     }
-
-    /**
-     * 获取redis
-     *
-     * @param string $type 类型
-     * @author wangjiang<wangjiang@eelly.net>
-     * @since  2017年4月17日
-     */
-    public function getRedisCache($type = 'default')
-    {
-         return \Phalcon\Di::getDefault()->get('cacheManager', [])->getRedisServer($type, $this->config);
-    }
 }

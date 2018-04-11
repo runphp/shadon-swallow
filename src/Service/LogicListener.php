@@ -88,8 +88,6 @@ class LogicListener implements \Phalcon\Di\InjectionAwareInterface
     {
         $class = $logicProxy->getLogicClass();
         $this->module = strtolower(explode('\\', $class)[0]);
-        $method = $logicProxy->getActiveMethod();
-        $args = $argsReturn[0];
         // 解析目前访问的逻辑层方法的注释
         $annotations = $this->di->getAnnotations()->getMethod($class, $logicProxy->getActiveMethod());
         // 检查是否方法中带有注释名称‘Cache’的注释单元
@@ -101,33 +99,9 @@ class LogicListener implements \Phalcon\Di\InjectionAwareInterface
             $options = array('lifetime' => $lifetime);
             // 检查注释单元中是否有用户定义的‘key’参数
             if ($annotation->hasArgument('key')) {
-                $key = $annotation->getArgument('key');
-                //处理预变量
-                if (false !== strpos($key, '$')) {
-                    $methodObj = \Swallow\Core\Reflection::getClass($class)->getMethod($method);
-                    $parameters = $methodObj->getParameters();
-                    $argsNew = array();
-                    if (! empty($args) && ! empty($parameters)) {
-                        $i = 0;
-                        foreach ($parameters as $val) {
-                            if(isset($args[$i])){
-                                $argsNew[$val->name] = $args[$i];
-                            } elseif ($val->isDefaultValueAvailable()) {
-                                $argsNew[$val->name] = $val->getDefaultValue();
-                            }
-                            $i++;
-                        }
-                    }
-                    $key = preg_replace_callback('/\$([A-Za-z0-9]+)/',
-                        function ($matchs) use ($argsNew) {
-                            $val = ! empty($argsNew[$matchs[1]]) ? $argsNew[$matchs[1]] : '';
-                            $val = is_array($val) ? md5(var_export($val, true)) : $val;
-                            return $val;
-                        }, $key);
-                }
-                $options['key'] = $key;
+                $options['key'] = $annotation->getArgument('key');
             } else {
-                $options['key'] = md5(serialize([$class, $method, $args]));
+                $options['key'] = md5(serialize([$class, $logicProxy->getActiveMethod(), $argsReturn[0]]));
             }
             return $this->cache($options, $argsReturn[1]);
         }

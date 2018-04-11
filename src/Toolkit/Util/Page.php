@@ -90,12 +90,11 @@ class Page
     /**
      * 生成链接URL
      * @param  integer $page 页码
-     * @param  str $uri 自定义uri
      * @return string
      */
-    private static function url($pages, $uri = '')
+    private static function url($pages)
     {
-        $url = preg_replace('/(&|\?)page=[^&]+/', '', empty($uri) ? $_SERVER['REQUEST_URI'] : $uri);
+        $url = preg_replace('/(&|\?)page=[^&]+/', '', $_SERVER['REQUEST_URI']);
         if (substr_count($url, '&') == 0 && substr_count($url, '?') == 0) {
             $url = $url . '?' . 'page=' . $pages;
         } else {
@@ -124,25 +123,25 @@ class Page
         if (! empty($page->total_pages) && $page->current > $page->total_pages) {
             $page->current = $page->total_pages;
         }
-        $page->uri = empty($page->uri) ? '' : $page->uri;
+        
         //上一页
-        $up_page = $page->before > 0 ? '<a class="sbs-paging-pre" href="' . Page::url($page->before, $page->uri) . '">' . Page::$config['prev'] . '</a>' : '';
+        $up_page = $page->before > 0 ? '<a class="sbs-paging-pre" href="' . Page::url($page->before) . '">' . Page::$config['prev'] . '</a>' : '';
         //当前页为第一页 按钮为灰色不可点击
         $up_page && $page->current == 1 && $up_page = '<a class="sbs-paging-pre disabled" >' . Page::$config['prev'] . '</a>';
         
         //下一页
         $down_page = ($page->next <=
-             $page->total_pages) ? '<a class="sbs-paging-next" href="' . Page::url($page->next, $page->uri) . '">' . Page::$config['next'] . '</a>' : '';
+             $page->total_pages) ? '<a class="sbs-paging-next" href="' . Page::url($page->next) . '">' . Page::$config['next'] . '</a>' : '';
         //当前页为最后一页 下一页按钮为灰色不可点击
         $down_page && $page->current == $page->last && $down_page = '<a class="sbs-paging-pre disabled" >' . Page::$config['next'] . '</a>';
         
         //第一页
-        $the_first = '<a class="sbs-paging-btn" href="' . Page::url(1, $page->uri) . '">' . Page::$config['first'] . '</a>';
+        $the_first = '<a class="sbs-paging-btn" href="' . Page::url(1) . '">' . Page::$config['first'] . '</a>';
         //当前页为第一页 按钮为灰色不可点击
         $page->current == 1 && $the_first = '<a class="sbs-paging-pre disabled" >' . Page::$config['first'] . '</a>';
         
         //最后一页
-        $the_end = '<a class="sbs-paging-btn" href="' . Page::url($page->total_pages, $page->uri) . '">' . Page::$config['last'] . '</a>';
+        $the_end = '<a class="sbs-paging-btn" href="' . Page::url($page->total_pages) . '">' . Page::$config['last'] . '</a>';
         //当前页为最后一页 最后一页按钮为灰色不可点击
         $page->current == $page->last && $the_end = '<a class="sbs-paging-pre disabled" >' . Page::$config['last'] . '</a>';
         
@@ -160,7 +159,7 @@ class Page
             
             if ($p > 0 && $p != $page->current) {
                 if ($p <= $page->total_pages) {
-                    $link_page .= '<a class="sbs-paging-item" href="' . Page::url($p, $page->uri) . '">' . $p . '</a>';
+                    $link_page .= '<a class="sbs-paging-item" href="' . Page::url($p) . '">' . $p . '</a>';
                 } else {
                     break;
                 }
@@ -170,16 +169,7 @@ class Page
                 }
             }
         }
-//         var_dump(array(
-//                 Page::$config['header'], 
-//                 $page->current, 
-//                 $up_page, 
-//                 $down_page, 
-//                 $the_first, 
-//                 $link_page, 
-//                 $the_end, 
-//                 $page->total_items, 
-//                 $page->total_pages));exit;
+        
         //替换分页内容
         $page_str = str_replace(
             array('%HEADER%', '%NOW_PAGE%', '%UP_PAGE%', '%DOWN_PAGE%', '%FIRST%', '%LINK_PAGE%', '%END%', '%TOTAL_ROW%', '%TOTAL_PAGE%'), 
