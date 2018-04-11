@@ -75,7 +75,7 @@ abstract class Service extends Base
      *
      * @throws LogicException
      *
-     * @return number
+     * @return int
      *
      * @author hehui<hehui@eelly.net>
      *
