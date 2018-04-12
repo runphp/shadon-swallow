@@ -5,8 +5,7 @@
 	"type" : "php",
 	"require" : {
 		"filp/whoops": "2.1.4",
-		"mongodb/mongodb" : "1.1.2",
-		"symfony/var-dumper" : "2.7.2"
+		"mongodb/mongodb" : "1.1.2"
 	},
 	"autoload" : {
 		"psr-4" : {
