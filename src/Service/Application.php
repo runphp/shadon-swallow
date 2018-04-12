@@ -11,6 +11,8 @@ namespace Swallow\Service;
 
 use Api\Logic\ApiResultHistoryLogic;
 use Api\Logic\NodeLogic;
+use Monolog\Handler\StreamHandler;
+use Monolog\Logger;
 use Swallow\Exception\StatusCode;
 use Swallow\Exception\LogicException;
 use Swallow\Toolkit\Util\Arrays;
@@ -641,25 +643,38 @@ class Application extends \Phalcon\Mvc\Application
                 $retval['info'] .= ' detail:' .$e->getMessage(). ' in '.$e->getFile() .':'.$e->getLine();
             }
             $retval['retval'] = null;
-            $logger = $this->getDI()->getShared('logger');
-            $logger->error('db error', $e->getTrace());
+            $this->error('db error', $e->getTrace());
         } catch (SystemException $e) {
             $retval['info'] = '程序内部错误';
             $retval['status'] = $e->getCode();
             $retval['retval'] = null;
-            $logger = $this->getDI()->getShared('logger');
-            $logger->error('internal error', $e->getTrace());
+            $this->error('internal error', $e->getTrace());
         } catch(\Exception $e) {
             $retval['info'] = '服务系统错误';
             if (APP_DEBUG) {
                 $retval['info'] .= ' detail:' .$e->getMessage(). ' in '.$e->getFile() .':'.$e->getLine();
             }
             $retval['retval'] = null;
-            $logger = $this->getDI()->getShared('logger');
-            $logger->error('server error', $e->getTrace());
+            $this->error('server error', $e->getTrace());
         }
 
         return $retval;
+    }
+
+    /**
+     * @param $message
+     * @param array $context
+     * @throws \Exception
+     */
+    private function error($message, array  $context = [])
+    {
+        static $logger;
+        if (null === $logger) {
+            $logger = new Logger('newmall');
+            $errorFile = $this->getDI()->getShared('config')->path->errorLog . '/app.' . date('Ymd') . '.txt';
+            $logger->pushHandler(new StreamHandler($errorFile));
+        }
+        $logger->error($message, $context);
     }
 
     /**
