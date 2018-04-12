@@ -50,6 +50,7 @@ class VerifySql implements \Phalcon\Di\InjectionAwareInterface
      */
     public function verify($sql, $prefix)
     {
+        return;
         $di = $this->getDI();
         //$moduleName = $di->getDispatcher()->getModuleName();
         
