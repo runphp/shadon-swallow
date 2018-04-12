@@ -17,6 +17,8 @@ use Swallow\Exception\StatusCode;
 use Swallow\Exception\LogicException;
 use Swallow\Toolkit\Util\Arrays;
 use Swallow\Exception\SystemException;
+use Whoops\Exception\Inspector;
+use Whoops\Handler\PlainTextHandler;
 
 /**
  * service app
@@ -643,38 +645,43 @@ class Application extends \Phalcon\Mvc\Application
                 $retval['info'] .= ' detail:' .$e->getMessage(). ' in '.$e->getFile() .':'.$e->getLine();
             }
             $retval['retval'] = null;
-            $this->error('db error', $e->getTrace());
+            $this->handleException($e);
         } catch (SystemException $e) {
             $retval['info'] = '程序内部错误';
             $retval['status'] = $e->getCode();
             $retval['retval'] = null;
-            $this->error('internal error', $e->getTrace());
+            $this->handleException($e);
         } catch(\Exception $e) {
             $retval['info'] = '服务系统错误';
             if (APP_DEBUG) {
                 $retval['info'] .= ' detail:' .$e->getMessage(). ' in '.$e->getFile() .':'.$e->getLine();
             }
             $retval['retval'] = null;
-            $this->error('server error', $e->getTrace());
+            $logger = $this->getDI()->getShared('logger');
+            $this->handleException($e);
         }
 
         return $retval;
     }
 
     /**
-     * @param $message
-     * @param array $context
-     * @throws \Exception
+     * @param \Throwable $exception
      */
-    private function error($message, array  $context = [])
+    private function handleException(\Throwable $exception)
     {
-        static $logger;
-        if (null === $logger) {
+        static $handler;
+        if (null === $handler) {
             $logger = new Logger('newmall');
             $errorFile = $this->getDI()->getShared('config')->path->errorLog . '/app.' . date('Ymd') . '.txt';
             $logger->pushHandler(new StreamHandler($errorFile));
+
+            $handler = new PlainTextHandler($logger);
+            $handler->loggerOnly(true);
         }
-        $logger->error($message, $context);
+
+        $handler->setInspector(new Inspector($exception));
+        $handler->setException($exception);
+        $handler->handle();
     }
 
     /**
