@@ -144,7 +144,7 @@ class DesCrypt
         }
         $ks = @mcrypt_enc_get_key_size($td);
         @mcrypt_generic_init($td, $key, $iv);
-        $decrypted = mdecrypt_generic($td, $str);
+        $decrypted = @mdecrypt_generic($td, $str);
         @mcrypt_generic_deinit($td);
         @mcrypt_module_close($td);
         return $this->pkcs5Unpad($decrypted);
