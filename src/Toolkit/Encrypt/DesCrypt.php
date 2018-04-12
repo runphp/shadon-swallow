@@ -101,19 +101,19 @@ class DesCrypt
      */
     function encrypt($str)
     {
-        $size = mcrypt_get_block_size(MCRYPT_3DES, MCRYPT_MODE_CBC);
+        $size = @mcrypt_get_block_size(MCRYPT_3DES, MCRYPT_MODE_CBC);
         $str = $this->pkcs5Pad($str, $size);
         $key = str_pad($this->key, 24, '0');
-        $td = mcrypt_module_open(MCRYPT_3DES, '', MCRYPT_MODE_CBC, '');
+        $td = @mcrypt_module_open(MCRYPT_3DES, '', MCRYPT_MODE_CBC, '');
         if ($this->iv == '') {
-            $iv = mcrypt_create_iv(mcrypt_enc_get_iv_size($td), MCRYPT_RAND);
+            $iv = @mcrypt_create_iv(@mcrypt_enc_get_iv_size($td), MCRYPT_RAND);
         } else {
             $iv = $this->iv;
         }
-        mcrypt_generic_init($td, $key, $iv);
-        $data = mcrypt_generic($td, $str);
-        mcrypt_generic_deinit($td);
-        mcrypt_module_close($td);
+        @mcrypt_generic_init($td, $key, $iv);
+        $data = @mcrypt_generic($td, $str);
+        @mcrypt_generic_deinit($td);
+        @mcrypt_module_close($td);
         return base64_encode($data);
     }
 
