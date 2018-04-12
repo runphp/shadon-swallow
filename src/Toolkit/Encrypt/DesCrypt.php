@@ -136,17 +136,17 @@ class DesCrypt
         }
         
         $key = str_pad($this->key, 24, '0');
-        $td = mcrypt_module_open(MCRYPT_3DES, '', MCRYPT_MODE_CBC, '');
+        $td = @mcrypt_module_open(MCRYPT_3DES, '', MCRYPT_MODE_CBC, '');
         if ($this->iv == '') {
-            $iv = mcrypt_create_iv(mcrypt_enc_get_iv_size($td), MCRYPT_RAND);
+            $iv = @mcrypt_create_iv(@mcrypt_enc_get_iv_size($td), MCRYPT_RAND);
         } else {
             $iv = $this->iv;
         }
-        $ks = mcrypt_enc_get_key_size($td);
-        mcrypt_generic_init($td, $key, $iv);
+        $ks = @mcrypt_enc_get_key_size($td);
+        @mcrypt_generic_init($td, $key, $iv);
         $decrypted = mdecrypt_generic($td, $str);
-        mcrypt_generic_deinit($td);
-        mcrypt_module_close($td);
+        @mcrypt_generic_deinit($td);
+        @mcrypt_module_close($td);
         return $this->pkcs5Unpad($decrypted);
     }
 
@@ -193,11 +193,11 @@ class DesCrypt
     public static function userEncrypt($data, $key = '%query%')
     {
         $prep_code = serialize($data);
-        $block = mcrypt_get_block_size('des', 'ecb');
+        $block = @mcrypt_get_block_size('des', 'ecb');
         if (($pad = $block - (strlen($prep_code) % $block)) < $block) {
             $prep_code .= str_repeat(chr($pad), $pad);
         }
-        $encrypt = mcrypt_encrypt(MCRYPT_DES, $key, $prep_code, MCRYPT_MODE_ECB);
+        $encrypt = @mcrypt_encrypt(MCRYPT_DES, $key, $prep_code, MCRYPT_MODE_ECB);
         return MD5(base64_encode($encrypt));
     }
 }
