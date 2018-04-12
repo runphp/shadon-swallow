@@ -638,6 +638,9 @@ class Application extends \Phalcon\Mvc\Application
         } catch (\Phalcon\Mvc\Model\Exception $e) {
             $retval['info'] = '系统繁忙！';
             $retval['status'] = $e->getCode();
+            if (APP_DEBUG) {
+                $retval['info'] .= ' detail:' .$e->getMessage(). ' in '.$e->getFile() .':'.$e->getLine();
+            }
             $retval['retval'] = null;
         } catch (SystemException $e) {
             $retval['info'] = '程序内部错误';
