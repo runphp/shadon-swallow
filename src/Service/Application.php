@@ -657,7 +657,6 @@ class Application extends \Phalcon\Mvc\Application
                 $retval['info'] .= ' detail:' .$e->getMessage(). ' in '.$e->getFile() .':'.$e->getLine();
             }
             $retval['retval'] = null;
-            $logger = $this->getDI()->getShared('logger');
             $this->handleException($e);
         }
 
