@@ -215,7 +215,7 @@ class Service
                 return $currentSigna;
             } else {
                 if ($currentSigna['retval'] != $signature) {
-                    return ['status' => 513, 'info' => 'Signatures do not match  ' . $currentSigna['retval'], 'retval' => ''];
+                    return ['status' => 513, 'info' => 'Signatures do not match (1)  ' . $currentSigna['retval'], 'retval' => ''];
                 }
             }
             
@@ -513,7 +513,7 @@ class Service
                 return $currentSigna;
             } else {
                 if ($currentSigna['retval'] != $signature) {
-                    return ['status' => 513, 'info' => 'Signatures do not match  ' . $currentSigna['retval'], 'retval' => ''];
+                    return ['status' => 513, 'info' => 'Signatures do not match (2)  ' . $currentSigna['retval'], 'retval' => ''];
                 }
             }
             
