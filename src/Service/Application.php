@@ -368,6 +368,7 @@ class Application extends \Phalcon\Mvc\Application implements \Swallow\Bootstrap
             $defaultDi = $this->getDI();
             /* @var \Phalcon\Http\Request $request */
             $request = $defaultDi->getRequest();
+
             $this->transmissionMode = $request->getHeader('Transmission-Mode')
                     ? $request->getHeader('Transmission-Mode')
                     : $request->get('Transmission-Mode');
@@ -381,9 +382,11 @@ class Application extends \Phalcon\Mvc\Application implements \Swallow\Bootstrap
             $this->isToGetToken = $transmissionToken ? $transmissionToken : $request->get('Transmission-Token');
             $isOld = false;
             $option = [];
+
             if (!$this->isToGetToken && !$this->isTestVerify()) {
                 //验证access_token
                 $res = \Api\Logic\CredentialLogic::getInstance()->verifyAccessToken($this->transmissionFrom);
+
                 self::$tokenConfig = $res['data'];
             }
             if ('Security' == $this->transmissionMode && 'v2' == $transmissionVersion) {
@@ -956,24 +959,38 @@ class Application extends \Phalcon\Mvc\Application implements \Swallow\Bootstrap
 
     /**
      * @param \Throwable $exception
+     *
+     * @throws \Exception
      */
     private function handleException(\Throwable $exception): void
     {
         static $handler;
         if (null === $handler) {
+            $handler = new PlainTextHandler($this->getLogger());
+            $handler->loggerOnly(true);
+        }
+        $handler->setInspector(new Inspector($exception));
+        $handler->setException($exception);
+        $handler->handle();
+    }
+
+    /**
+     * @throws \Exception
+     *
+     * @return Logger
+     */
+    private function getLogger()
+    {
+        static $logger;
+        if (null === $logger) {
             $logger = new Logger('newmall');
             $config = $this->getDI()->getShared('config');
             $errorFile = $config->path->errorLog.'/app.'.date('Ymd').'.txt';
             $logger->pushHandler(new StreamHandler($errorFile));
             $logger->pushHandler(new DingDingHandler($config->dingdingAccessToken));
-
-            $handler = new PlainTextHandler($logger);
-            $handler->loggerOnly(true);
         }
 
-        $handler->setInspector(new Inspector($exception));
-        $handler->setException($exception);
-        $handler->handle();
+        return $logger;
     }
 
     /**
@@ -1131,6 +1148,7 @@ class Application extends \Phalcon\Mvc\Application implements \Swallow\Bootstrap
             $length = strlen($data) - 14;
             $decodeData = substr($data, 8, $length);
             $data = json_decode($this->desCrypt->decrypt($decodeData), true);
+            $this->getLogger()->warning(__METHOD__, $data);
         }
 
         return $data;

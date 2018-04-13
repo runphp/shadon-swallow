@@ -1,24 +1,30 @@
 <?php
-/*
- * PHP version 5.5
- *
- * @copyright Copyright (c) 2012-2016 EELLY Inc. (http://www.eelly.com)
- * @link      http://www.eelly.com
- * @license   衣联网版权所有
- */
-if (! function_exists('milliseconds')) {
 
+declare(strict_types=1);
+
+/*
+ * This file is part of eelly package.
+ *
+ * (c) eelly.com
+ *
+ * For the full copyright and license information, please view the LICENSE
+ * file that was distributed with this source code.
+ */
+
+if (!function_exists('milliseconds')) {
     /**
-     * 获取当前毫秒
+     * 获取当前毫秒.
      *
      *
      * @return number
+     *
      * @author hehui<hehui@eelly.net>
+     *
      * @since  2016年10月7日
      */
     function milliseconds()
     {
-        return (int)round(microtime(true) * 1000);
+        return (int) round(microtime(true) * 1000);
     }
 }
 
