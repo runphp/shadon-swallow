@@ -15,6 +15,7 @@ namespace Swallow\Service;
 
 use Monolog\Handler\StreamHandler;
 use Monolog\Logger;
+use Shadon\Logger\Handler\DingDingHandler;
 use Swallow\Exception\LogicException;
 use Swallow\Exception\StatusCode;
 use Swallow\Exception\SystemException;
@@ -961,8 +962,10 @@ class Application extends \Phalcon\Mvc\Application implements \Swallow\Bootstrap
         static $handler;
         if (null === $handler) {
             $logger = new Logger('newmall');
-            $errorFile = $this->getDI()->getShared('config')->path->errorLog.'/app.'.date('Ymd').'.txt';
+            $config = $this->getDI()->getShared('config');
+            $errorFile = $config->path->errorLog.'/app.'.date('Ymd').'.txt';
             $logger->pushHandler(new StreamHandler($errorFile));
+            $logger->pushHandler(new DingDingHandler($config->dingdingAccessToken));
 
             $handler = new PlainTextHandler($logger);
             $handler->loggerOnly(true);
