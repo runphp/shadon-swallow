@@ -1,4 +1,7 @@
 <?php
+
+declare(strict_types=1);
+
 /*
  * This file is part of eelly package.
  *
@@ -85,7 +88,7 @@ class Log
      *
      * @since  2017年4月7日
      */
-    public static function setLogger($logger)
+    public static function setLogger($logger): void
     {
         self::$logger = $logger;
     }
@@ -95,14 +98,15 @@ class Log
      *
      * @param array $conf
      */
-    public static function init(array $conf = [])
+    public static function init(array $conf = []): void
     {
         self::$config = array_merge(self::$config, $conf);
         self::setLogger(self::getLogger());
         self::runWhoops();
         // 致命错误信息记录
         self::$reservedMemory = str_repeat('x', 40960);
-        register_shutdown_function(function () {
+        register_shutdown_function(function ($currPath): void {
+            chdir($currPath);
             self::$reservedMemory = null;
             $error = error_get_last();
             if ($error && \Whoops\Util\Misc::isLevelFatal($error['type'])) {
@@ -112,7 +116,7 @@ class Log
                 }
                 self::error('custom fatal info', $context);
             }
-        });
+        }, getcwd());
     }
 
     /**
@@ -125,7 +129,7 @@ class Log
      *
      * @since  2017年3月15日
      */
-    public static function pushCustomFatalInfo(array $fatalInfo)
+    public static function pushCustomFatalInfo(array $fatalInfo): void
     {
         foreach ($fatalInfo as $key => $value) {
             self::$fatalInfo[$key] = $value;
@@ -262,9 +266,9 @@ class Log
      * Logs whoop's Exception.
      *
      *
-     * @param \Exception $e
+     * @param \Throwable $e
      */
-    public static function logWhoopException(\Exception $exception)
+    public static function logWhoopException(\Throwable $exception): void
     {
         $handler = new PlainTextHandler(self::$logger);
         $handler->loggerOnly(true);
@@ -276,7 +280,7 @@ class Log
     /**
      * 启动哎呀
      */
-    private static function runWhoops()
+    private static function runWhoops(): void
     {
         ini_set('display_errors', '0');
         $run = new \Whoops\Run();
