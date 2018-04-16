@@ -1,17 +1,22 @@
 <?php
+
+declare(strict_types=1);
+
 /*
- * PHP version 5.5
+ * This file is part of eelly package.
  *
- * @copyright Copyright (c) 2012-2016 EELLY Inc. (http://www.eelly.com)
- * @link      http://www.eelly.com
- * @license   衣联网版权所有
+ * (c) eelly.com
+ *
+ * For the full copyright and license information, please view the LICENSE
+ * file that was distributed with this source code.
  */
+
 namespace Swallow\ThirdParty\FastDFS;
 
 use Swallow\Core\Conf;
 
 /**
- * FastDFS 客户端
+ * FastDFS 客户端.
  *
  * 使用示例:
  *
@@ -24,29 +29,35 @@ use Swallow\Core\Conf;
  * ```
  *
  * @author    hehui<hehui@eelly.net>
+ *
  * @since     2016年10月5日
+ *
  * @version   1.0
  */
 class Client
 {
-
     /**
-     *
      * @var Tracker
      */
     private $tracker;
 
     /**
-     *
      * @var array
      */
     private $storageInfo;
 
     /**
-     *
      * @var Storage
      */
-    private $storage;
+    private $storage = [];
+
+    public function __construct(array $config)
+    {
+        $index = time() % count($config['group']);
+        $this->tracker = new Tracker($config['host'], $config['port']);
+        $this->storageInfo = $this->tracker->applyStorage($config['group'][$index]);
+        $this->storage = new Storage($this->storageInfo['storage_addr'], $this->storageInfo['storage_port']);
+    }
 
     public static function getInstance()
     {
@@ -55,15 +66,8 @@ class Client
             return $self;
         }
         $config = Conf::get('fastdfs');
-        return $self = new self($config);
-    }
 
-    public function __construct(array $config)
-    {
-        $index = time() % count($config['group']);
-        $this->tracker = new Tracker($config['host'], $config['port']);
-        $this->storageInfo = $this->tracker->applyStorage($config['group'][$index]);
-        $this->storage = new Storage($this->storageInfo['storage_addr'], $this->storageInfo['storage_port']);
+        return $self = new self($config);
     }
 
     public function getStorageInfo()
@@ -76,19 +80,27 @@ class Client
         return $this->storage;
     }
 
-    public function setStorage($storage)
+    public function getTracker()
+    {
+        return $this->tracker;
+    }
+
+    public function setStorage($storage): void
     {
         $this->storage = $storage;
     }
 
     /**
-     * 上传文件
+     * 上传文件.
      *
      *
      * @param stirng $filename 文件路径
-     * @param string $ext 扩展名
+     * @param string $ext      扩展名
+     *
      * @return string 文件路径
+     *
      * @author hehui<hehui@eelly.net>
+     *
      * @since 2016年10月5日
      */
     public static function uploadFile($filename, $ext = '')
@@ -102,16 +114,20 @@ class Client
         }
         $prevFilename = $filename;
         $result = $client->getStorage()->uploadFile($client->getStorageInfo()['storage_index'], $filename, $ext);
-        return $result['group'] . '/' . $result['path'];
+
+        return $result['group'].'/'.$result['path'];
     }
 
     /**
-     * 删除文件
+     * 删除文件.
      *
      *
      * @param string $filename 文件路径
-     * @return boolean
+     *
+     * @return bool
+     *
      * @author hehui<hehui@eelly.net>
+     *
      * @since  2016年10月5日
      */
     public static function deleteFile($filename)
@@ -119,6 +135,40 @@ class Client
         list($groupName, $filePath) = explode('/', $filename, 2);
         $client = self::getInstance();
         $result = $client->getStorage()->deleteFile($groupName, $filePath);
+
         return $result;
+    }
+
+    /**
+     * 读取文件.
+     *
+     * @param string $filename
+     *
+     * @return string
+     */
+    public static function readFile(string $filename)
+    {
+        list($groupName, $filePath) = explode('/', $filename, 2);
+        $client = self::getInstance();
+        $storageInfo = $client->getTracker()->applyStorage($groupName);
+        $storage = new Storage($storageInfo['storage_addr'], $storageInfo['storage_port']);
+
+        return $storage->readFile($groupName, $filePath);
+    }
+
+    /**
+     * 下载文件.
+     *
+     * @param string $filename   文件路径
+     * @param string $targetPath 保存路径
+     */
+    public static function downloadFile(string $filename, string $targetPath)
+    {
+        list($groupName, $filePath) = explode('/', $filename, 2);
+        $client = self::getInstance();
+        $storageInfo = $client->getTracker()->applyStorage($groupName);
+        $storage = new Storage($storageInfo['storage_addr'], $storageInfo['storage_port']);
+
+        return $storage->downloadFile($groupName, $filePath, $targetPath);
     }
 }
