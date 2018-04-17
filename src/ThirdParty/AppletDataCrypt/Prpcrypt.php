@@ -35,12 +35,13 @@ class Prpcrypt
 	public function decrypt( $aesCipher, $aesIV )
 	{
 		try {
-			$module = mcrypt_module_open(MCRYPT_RIJNDAEL_128, '', MCRYPT_MODE_CBC, '');
+			/*$module = mcrypt_module_open(MCRYPT_RIJNDAEL_128, '', MCRYPT_MODE_CBC, '');
 			mcrypt_generic_init($module, $this->key, $aesIV);
 			//解密
 			$decrypted = mdecrypt_generic($module, $aesCipher);
 			mcrypt_generic_deinit($module);
-			mcrypt_module_close($module);
+			mcrypt_module_close($module);*/
+            $decrypted = openssl_decrypt($aesCipher,'AES-128-CBC', $this->key,1, $aesIV);
 		} catch (Exception $e) {
 			return array(ErrorCode::$IllegalBuffer, null);
 		}
