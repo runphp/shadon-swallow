@@ -13,6 +13,9 @@ declare(strict_types=1);
 
 namespace Swallow\Service;
 
+use Eelly\SDK\EellyClient;
+use Eelly\SDK\Oauth\Api\TokenConvert;
+use League\OAuth2\Client\Token\AccessToken;
 use Monolog\Handler\StreamHandler;
 use Monolog\Logger;
 use Shadon\Logger\Handler\DingDingHandler;
@@ -370,10 +373,10 @@ class Application extends \Phalcon\Mvc\Application implements \Swallow\Bootstrap
             $request = $defaultDi->getRequest();
 
             $this->transmissionMode = $request->getHeader('Transmission-Mode')
-                    ? $request->getHeader('Transmission-Mode')
-                    : $request->get('Transmission-Mode');
+                ? $request->getHeader('Transmission-Mode')
+                : $request->get('Transmission-Mode');
             $this->transmissionFrom =
-                    $request->getHeader('Transmission-From')
+                $request->getHeader('Transmission-From')
                     ? $request->getHeader('Transmission-From')
                     : $request->get('Transmission-From');
             $transmissionToken = $request->getHeader('Transmission-Token');
@@ -415,7 +418,7 @@ class Application extends \Phalcon\Mvc\Application implements \Swallow\Bootstrap
             } else {
                 if (APP_DEBUG) {
                     $this->requestData = $this->requestDataDecrypt =
-                            $request->getPost() ? $request->getPost() : $request->get();
+                        $request->getPost() ? $request->getPost() : $request->get();
                     $this->encrypt = false;
                 } else {
                     throw new LogicException('You do not have permission to request!', StatusCode::REQUEST_FORBIDDEN);
@@ -424,7 +427,7 @@ class Application extends \Phalcon\Mvc\Application implements \Swallow\Bootstrap
             //转换参数
             $isMore = true;
             if (!('Base\\Service\\ClientService' == $this->requestDataDecrypt['service_name']
-                    && 'curlMoreReqMallService' == $this->requestDataDecrypt['method'])) {
+                && 'curlMoreReqMallService' == $this->requestDataDecrypt['method'])) {
                 $isMore = false;
             }
 
@@ -432,43 +435,43 @@ class Application extends \Phalcon\Mvc\Application implements \Swallow\Bootstrap
             $this->serviceName = $this->requestDataDecrypt['service_name'];
             $this->method = $this->requestDataDecrypt['method'];
             $this->args = (isset($this->requestDataDecrypt['args']) && 'null' != $this->requestDataDecrypt['args'])
-                    ? $this->requestDataDecrypt['args']
-                    : null;
+                ? $this->requestDataDecrypt['args']
+                : null;
             $this->timeStamp = $this->requestDataDecrypt['time'];
             $version = isset($this->requestDataDecrypt['version']) ? $this->requestDataDecrypt['version'] : '';
             $this->client = isset($this->requestDataDecrypt['client']) ? $this->requestDataDecrypt['client'] : '';
             // 登陆信息
             $this->userLoginToken = $option['user_login_token'] =
-                    isset($this->requestDataDecrypt['user_login_token'])
+                isset($this->requestDataDecrypt['user_login_token'])
                     ? $this->requestDataDecrypt['user_login_token']
                     : '';
             // 客户端信息
             $clearCache = $option['clear_cache'] =
-                    isset($this->requestDataDecrypt['clear_cache'])
+                isset($this->requestDataDecrypt['clear_cache'])
                     ? $this->requestDataDecrypt['clear_cache']
                     : '';
             $this->clientVersion = $option['client_version'] =
-                    isset($this->requestDataDecrypt['client_version'])
+                isset($this->requestDataDecrypt['client_version'])
                     ? $this->requestDataDecrypt['client_version']
                     : '';
             $this->clientName = $option['client_name'] =
-                    isset($this->requestDataDecrypt['client_name'])
+                isset($this->requestDataDecrypt['client_name'])
                     ? $this->requestDataDecrypt['client_name']
                     : '';
             $this->clientUserType = $option['client_user_type'] =
-                    isset($this->requestDataDecrypt['client_user_type'])
+                isset($this->requestDataDecrypt['client_user_type'])
                     ? $this->requestDataDecrypt['client_user_type']
                     : '';
             $this->deviceNumber = $option['device_number'] =
-                    isset($this->requestDataDecrypt['device_number'])
+                isset($this->requestDataDecrypt['device_number'])
                     ? $this->requestDataDecrypt['device_number']
                     : '';
             $this->clientAddress = $option['client_address'] =
-                    !empty($request->getClientAddress())
+                !empty($request->getClientAddress())
                     ? $request->getClientAddress()
                     : '';
             $this->sessionId = $option['session_id'] =
-                    isset($this->requestDataDecrypt['session_id'])
+                isset($this->requestDataDecrypt['session_id'])
                     ? $this->requestDataDecrypt['session_id']
                     : '';
             $this->getDI()->getShared('clientInfo')->setClearCache($clearCache)->setClientInfo([
@@ -537,8 +540,8 @@ class Application extends \Phalcon\Mvc\Application implements \Swallow\Bootstrap
             } else {
                 if (false === strpos($this->serviceName, '\\')) {
                     $class = empty($this->client)
-                            ? $this->app.'\Service\\'.$this->serviceName
-                            : $this->app.'\Service\\'.$this->client.'\\'.$this->serviceName;
+                        ? $this->app.'\Service\\'.$this->serviceName
+                        : $this->app.'\Service\\'.$this->client.'\\'.$this->serviceName;
                 } else {
                     $class = $this->serviceName;
                     !empty($this->client) && $class = str_replace('\\Service\\', '\\Service\\'.$this->client.'\\', $class);
@@ -566,7 +569,49 @@ class Application extends \Phalcon\Mvc\Application implements \Swallow\Bootstrap
 
             // 接口系统不再校验登录，只用作日志记录
             !empty($this->userLoginToken) && $this->verifyLogin(['user_login_token' => $this->userLoginToken]);
-            if ($isOld) {
+            // 调用sdk
+            if (0 === strpos($this->serviceName, 'Eelly\\SDK\\')) {
+                if (!class_exists($this->serviceName) || !method_exists($this->serviceName, $this->method)) {
+                    throw new LogicException('接口未找到', StatusCode::DATA_NOT_FOUND);
+                }
+                // iniitialize eelly client
+                $redisConfig = (require 'config/'.APPLICATION_ENV.'/cache.php')['Redis'];
+                $options = [
+                    'parameters' => $redisConfig['default']['seeds'],
+                    'options'    => ['cluster' => 'redis'],
+                    'statsKey'   => '_PHCR_EELLY_STATS',
+                ];
+                $cache = new \Shadon\Cache\Backend\Predis(new \Phalcon\Cache\Frontend\Igbinary(), $options);
+                $eellyClient = \Eelly\SDK\EellyClient::initialize(require 'config/'.APPLICATION_ENV.'/config.eellyclient.php', $cache);
+                if ($this->userLoginInfo && isset($this->userLoginInfo['access_token'])) {
+                    $cache = $this->getDI()->getShared('cache');
+                    $cacheKey = __METHOD__.$this->userLoginInfo['access_token'];
+                    $accessToken = $cache->get($cacheKey);
+                    while (null === $accessToken) {
+                        try {
+                            $accessToken = (new TokenConvert())->newMallLogin($this->userLoginInfo['access_token']);
+                            $cache->save($cacheKey, $accessToken, $accessToken['expires_in']);
+                        } catch (\Eelly\Exception\LogicException $e) {
+                            (new TokenConvert())->saveNewMallAccessToken($this->userLoginInfo['access_token'], ['uid' => $this->userLoginInfo['uid']]);
+                        }
+                    }
+                    $accessToken = new AccessToken($accessToken);
+                    if ($accessToken->hasExpired()) {
+                        try {
+                            $accessToken = $eellyClient->getSdkClient()->getProvider()->getAccessToken(
+                                'refresh_token',
+                                ['refresh_token' => $accessToken->getRefreshToken()]
+                            );
+                        } catch (IdentityProviderException $e) {
+                            $cache->remove($cacheKey);
+                        }
+                        $cache->save($cacheKey, $accessToken->jsonSerialize(), $accessToken['expires_in']);
+                    }
+                    $eellyClient->getSdkClient()->setAccessToken($accessToken);
+                }
+                $sdk = new $this->serviceName();
+                $res = call_user_func_array([$sdk, $this->method], $this->args);
+            } elseif ($isOld) {
                 // 过渡版本 : android和ios客户端，厂+版本2.2.0，店+版本4.3.0之前的版本
                 $isTransition = in_array(strtolower($this->clientName), ['ios', 'android']) && (('buyer' == $this->clientUserType && $this->clientVersion < 430) || ('seller' == $this->clientUserType && $this->clientVersion < 220));
                 $service = $isTransition ? 'transitionService' : 'oldService';
@@ -622,6 +667,7 @@ class Application extends \Phalcon\Mvc\Application implements \Swallow\Bootstrap
                     ],
                     'json' => $this->args,
                 ]);
+
                 if (200 == $data->getStatusCode()) {
                     //$res = json_decode((string)$data->getBody(), true);
                     //$res = \Swallow\Toolkit\Util\Json::decode2((string)$data->getBody());
