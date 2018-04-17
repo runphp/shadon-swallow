@@ -178,4 +178,19 @@ class Number
     {
         return $number >= 100000 ? round(($number / 10000), 1) . '万' : $number;
     }
+    
+    /**
+     * 将数字转换成字符串表示
+     * ----------------------------------
+     * 小于100,   全部显示
+     * 大于100,   显示99+。
+     *
+     * @param  int   $number   数字
+     * @author 李伟权 <liweiquan@eelly.net>
+     * @since  2018年04月17日
+     */
+    public static function getNumberString6($number)
+    {
+        return $number >= 100 ? '99+' : $number;
+    }
 }
