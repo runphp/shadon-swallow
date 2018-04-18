@@ -139,7 +139,7 @@ class File extends \Phalcon\Http\Request\File implements \Phalcon\DI\InjectionAw
             $img = new \Imagick($filePath);
             $format = $img->identifyFormat('%m');
             if ('WEBP' == $format) {
-                unlink($filePath);
+                //unlink($filePath);
                 $img->setImageFormat('jpeg');
                 $img->writeImage($filePath);
                 $img->destroy();
