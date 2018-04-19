@@ -63,10 +63,10 @@ class Loader extends \Phalcon\Loader implements \Phalcon\Di\InjectionAwareInterf
         //更新代理文件
         $this->updateAnnotations($className);
         //验证代码
-        if (APP_DEBUG) {
+        /*if (APP_DEBUG) {
             $verify = $this->getDI()->getShared('\Swallow\Debug\VerifyCode');
             $verify->verify($className);
-        }
+        }*/
         return $result;
     }
 
