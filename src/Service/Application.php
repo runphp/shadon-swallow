@@ -585,17 +585,17 @@ class Application extends \Phalcon\Mvc\Application implements \Swallow\Bootstrap
                 $eellyClient = \Eelly\SDK\EellyClient::initialize(require 'config/'.APPLICATION_ENV.'/config.eellyclient.php', $cache);
                 if ($this->userLoginInfo && isset($this->userLoginInfo['access_token'])) {
                     $cache = $this->getDI()->getShared('cache');
-                    $cacheKey = __METHOD__.$this->userLoginInfo['access_token'];
+                    $cacheKey = __METHOD__.':'.$this->userLoginInfo['access_token'];
                     $accessToken = $cache->get($cacheKey);
-                    while (null === $accessToken) {
+                    while (!$accessToken instanceof AccessToken) {
                         try {
                             $accessToken = (new TokenConvert())->newMallLogin($this->userLoginInfo['access_token']);
-                            $cache->save($cacheKey, $accessToken, $accessToken['expires_in']);
+                            $accessToken = new AccessToken($accessToken);
+                            $cache->save($cacheKey, $accessToken, $accessToken->getExpires());
                         } catch (\Eelly\Exception\LogicException $e) {
                             (new TokenConvert())->saveNewMallAccessToken($this->userLoginInfo['access_token'], ['uid' => $this->userLoginInfo['uid']]);
                         }
                     }
-                    $accessToken = new AccessToken($accessToken);
                     if ($accessToken->hasExpired()) {
                         try {
                             $accessToken = $eellyClient->getSdkClient()->getProvider()->getAccessToken(
@@ -605,7 +605,7 @@ class Application extends \Phalcon\Mvc\Application implements \Swallow\Bootstrap
                         } catch (IdentityProviderException $e) {
                             $cache->remove($cacheKey);
                         }
-                        $cache->save($cacheKey, $accessToken->jsonSerialize(), $accessToken['expires_in']);
+                        $cache->save($cacheKey, $accessToken, $accessToken->getExpires());
                     }
                     $eellyClient->getSdkClient()->setAccessToken($accessToken);
                 }

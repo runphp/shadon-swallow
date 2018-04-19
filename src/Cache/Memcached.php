@@ -1,33 +1,40 @@
 <?php
+
+declare(strict_types=1);
+
 /*
- * PHP version 5.5
+ * This file is part of eelly package.
  *
- * @copyright  Copyright (c) 2012-2015 EELLY Inc. (http://www.eelly.com)
- * @link       http://www.eelly.com
- * @license    衣联网版权所有
+ * (c) eelly.com
+ *
+ * For the full copyright and license information, please view the LICENSE
+ * file that was distributed with this source code.
  */
+
 namespace Swallow\Cache;
 
 use Memcached as MemcachedResource;
 
 /**
- * Mysqli驱动类
+ * Mysqli驱动类.
  *
  * @author    SpiritTeam
+ *
  * @since     2015年3月10日
+ *
  * @version   1.0
  */
 class Memcached implements Cache
 {
-
     /**
      * memcache对象
+     *
      * @var \Memcached
      */
     private $instance = null;
 
     /**
-     * 初始化
+     * 初始化.
      */
     public function __construct($server)
     {
@@ -39,9 +46,10 @@ class Memcached implements Cache
     }
 
     /**
-     * 获取缓存的数据
+     * 获取缓存的数据.
      *
-     * @param  string $key     缓存KEY
+     * @param string $key 缓存KEY
+     *
      * @return mixed
      */
     public function get($key)
@@ -50,11 +58,12 @@ class Memcached implements Cache
     }
 
     /**
-     * 设置缓存
+     * 设置缓存.
      *
-     * @param  string $key     缓存KEY
-     * @param  mixed  $value   缓存的内容
-     * @param  string $prefix  缓存KEY前缀
+     * @param string $key    缓存KEY
+     * @param mixed  $value  缓存的内容
+     * @param string $prefix 缓存KEY前缀
+     *
      * @return bool
      */
     public function set($key, $value, $time = '')
@@ -65,32 +74,35 @@ class Memcached implements Cache
     /**
      * 并发下设置缓存.
      *
-     * @param  string $key     缓存KEY
-     * @param  mixed  $value   缓存的内容
-     * @param  string $prefix  缓存KEY前缀
+     * @param string $key    缓存KEY
+     * @param mixed  $value  缓存的内容
+     * @param string $prefix 缓存KEY前缀
+     *
      * @return bool
      */
     public function casSet($key, $value, $time = 60)
     {
         do {
             $this->instance->get($key, null, $cas);
-            if ($this->instance->getResultCode() == MemcachedResource::RES_NOTFOUND) {
+            if (MemcachedResource::RES_NOTFOUND == $this->instance->getResultCode()) {
                 // 创建并进行一个原子添加
                 $this->instance->add($key, $value);
             } else {
                 // 并以cas方式去存储
                 $this->instance->cas($cas, $key, $value, $time);
             }
-        } while ($this->instance->getResultCode() != MemcachedResource::RES_SUCCESS);
+        } while (MemcachedResource::RES_SUCCESS != $this->instance->getResultCode());
+
         return true;
     }
 
     /**
-     * 添加缓存
+     * 添加缓存.
      *
-     * @param  string $key     缓存KEY
-     * @param  mixed  $value   缓存的内容
-     * @param  string $prefix  缓存KEY前缀
+     * @param string $key    缓存KEY
+     * @param mixed  $value  缓存的内容
+     * @param string $prefix 缓存KEY前缀
+     *
      * @return bool
      */
     public function add($key, $value, $time = '')
@@ -101,30 +113,35 @@ class Memcached implements Cache
     /**
      * 递增一个KEY值
      *
-     * @param  string $key
-     * @param  number $step   步进值
+     * @param string $key
+     * @param number $step 步进值
+     *
      * @return bool
      */
-    function inc($key, $step = 1){
+    public function inc($key, $step = 1)
+    {
         return $this->instance->increment($key, $step);
     }
 
     /**
      * 递减一个KEY值
      *
-     * @param  string $key
-     * @param  string $prefix  缓存KEY前缀
-     * @param  number $step    步进值
+     * @param string $key
+     * @param string $prefix 缓存KEY前缀
+     * @param number $step   步进值
+     *
      * @return bool
      */
-    function dec($key, $step = 1){
+    public function dec($key, $step = 1)
+    {
         return $this->instance->decrement($key, $step);
     }
 
     /**
-     * 删除缓存
+     * 删除缓存.
      *
-     * @param  string $key     缓存KEY
+     * @param string $key 缓存KEY
+     *
      * @return bool
      */
     public function delete($key)

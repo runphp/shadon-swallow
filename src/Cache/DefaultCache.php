@@ -1,45 +1,53 @@
 <?php
 
+declare(strict_types=1);
+
 /*
- * PHP version 5.5
+ * This file is part of eelly package.
  *
- * @copyright  Copyright (c) 2012-2015 EELLY Inc. (http://www.eelly.com)
- * @link       http://www.eelly.com
- * @license    衣联网版权所有
+ * (c) eelly.com
+ *
+ * For the full copyright and license information, please view the LICENSE
+ * file that was distributed with this source code.
  */
+
 namespace Swallow\Cache;
 
 /**
- * 缓存
+ * 缓存.
  *
  * @author    SpiritTeam
+ *
  * @since     2015年3月10日
+ *
  * @version   1.0
  */
 class DefaultCache
 {
-
     /**
-     * cache配置
+     * cache配置.
+     *
      * @var array
      */
     protected $config = [];
-    
+
     /**
-     * 构造
-     * 
+     * 构造.
+     *
      * @author zengzhihao<zengzhihao@eelly.net>
+     *
      * @since  2015年12月29日
      */
     public function __construct()
     {
         $this->config = \Phalcon\Di::getDefault()->getConfig()->cache->toArray();
     }
-    
+
     /**
      * 获取默认缓存对象
-     * 
+     *
      * @author zengzhihao<zengzhihao@eelly.net>
+     *
      * @since  2015年11月30日
      */
     public function getCache()
@@ -48,9 +56,10 @@ class DefaultCache
     }
 
     /**
-     * 获取旧商城登陆cache
-     * 
+     * 获取旧商城登陆cache.
+     *
      * @author zengzhihao<zengzhihao@eelly.net>
+     *
      * @since  2015年12月29日
      */
     public function getLoginCache()

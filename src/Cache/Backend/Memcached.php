@@ -1,41 +1,46 @@
 <?php
 
+declare(strict_types=1);
+
 /*
- * PHP version 5.5
+ * This file is part of eelly package.
  *
- * @copyright  Copyright (c) 2012-2015 EELLY Inc. (http://www.eelly.com)
- * @link       http://www.eelly.com
- * @license    衣联网版权所有
+ * (c) eelly.com
+ *
+ * For the full copyright and license information, please view the LICENSE
+ * file that was distributed with this source code.
  */
+
 namespace Swallow\Cache\Backend;
 
 /**
  * Memcached.
  *
  * @author     SpiritTeam
+ *
  * @since      2015年8月13日
+ *
  * @version    1.0
  */
 class Memcached extends \Phalcon\Cache\Backend\Libmemcached implements \Phalcon\DI\InjectionAwareInterface
 {
-
     /**
      * @var \Phalcon\DiInterface
      */
     private $di = null;
 
     /**
-     * Sets the dependency injector
+     * Sets the dependency injector.
      *
      * @param mixed $dependencyInjector
      */
-    public function setDI(\Phalcon\DiInterface $dependencyInjector)
+    public function setDI(\Phalcon\DiInterface $dependencyInjector): void
     {
         $this->di = $dependencyInjector;
     }
 
     /**
-     * Returns the internal dependency injector
+     * Returns the internal dependency injector.
      *
      * @return \Phalcon\DiInterface
      */
@@ -45,22 +50,24 @@ class Memcached extends \Phalcon\Cache\Backend\Libmemcached implements \Phalcon\
     }
 
     /**
-     * Returns a cached content
+     * Returns a cached content.
      *
      * @param int|string $keyName
-     * @param long $lifetime
+     * @param long       $lifetime
+     *
      * @return mixed
      */
     public function get($keyName, $lifetime = null)
     {
         $application = $this->di->getApplication();
         $appType = $application::APP_TYPE;
-        if($appType != 'console'){
+        if ('console' != $appType) {
             $clearCache = $this->getDI()->getClearCache()->forceClearCache();
-            if ($clearCache === true) {
+            if (true === $clearCache) {
                 return false;
             }
         }
+
         return parent::get($keyName, $lifetime);
     }
 }
