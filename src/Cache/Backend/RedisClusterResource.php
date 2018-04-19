@@ -48,6 +48,6 @@ class RedisClusterResource extends \RedisCluster
      */
     public function settimeout($key, $lifetime)
     {
-        return $this->expire($key, $lifetime);
+        return $this->expire($key, (int)$lifetime);
     }
 }
