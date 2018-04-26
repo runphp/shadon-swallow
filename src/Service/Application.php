@@ -572,7 +572,7 @@ class Application extends \Phalcon\Mvc\Application implements \Swallow\Bootstrap
             // 调用sdk
             if (0 === strpos($this->serviceName, 'Eelly\\SDK\\')) {
                 if (!class_exists($this->serviceName) || !method_exists($this->serviceName, $this->method)) {
-                    throw new LogicException('接口未找到', StatusCode::DATA_NOT_FOUND);
+                    throw new LogicException("接口未找到({$this->serviceName}:{$this->method})", StatusCode::DATA_NOT_FOUND);
                 }
                 // iniitialize eelly client
                 $redisConfig = (require 'config/'.APPLICATION_ENV.'/cache.php')['Redis'];
@@ -588,12 +588,18 @@ class Application extends \Phalcon\Mvc\Application implements \Swallow\Bootstrap
                     $cacheKey = __METHOD__.':'.$this->userLoginInfo['access_token'];
                     $accessToken = $cache->get($cacheKey);
                     while (!$accessToken instanceof AccessToken) {
+                        static $preExcepton = null;
                         try {
                             $accessToken = (new TokenConvert())->newMallLogin($this->userLoginInfo['access_token']);
                             $accessToken = new AccessToken($accessToken);
                             $cache->save($cacheKey, $accessToken, $accessToken->getExpires());
                         } catch (\Eelly\Exception\LogicException $e) {
-                            (new TokenConvert())->saveNewMallAccessToken($this->userLoginInfo['access_token'], ['uid' => $this->userLoginInfo['uid']]);
+                            if (null === $preExcepton) {
+                                (new TokenConvert())->saveNewMallAccessToken($this->userLoginInfo['access_token'], ['uid' => $this->userLoginInfo['uid']]);
+                                $preExcepton = $e;
+                            } else {
+                                throw new LogicException('请重新登录', StatusCode::DATA_NOT_FOUND, ['uid' => $this->userLoginInfo['uid']]);
+                            }
                         }
                     }
                     if ($accessToken->hasExpired()) {
