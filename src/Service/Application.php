@@ -727,6 +727,9 @@ class Application extends \Phalcon\Mvc\Application implements \Swallow\Bootstrap
             $retval['info'] = $e->getMessage();
             $retval['status'] = $e->getCode();
             $retval['retval'] = $e->getArgs();
+        } catch (\Eelly\Exception\LogicException $e) {
+            $retval['info'] = $e->getMessage();
+            $retval['status'] = 701;
         } catch (\Phalcon\Mvc\Model\Exception $e) {
             $retval['info'] = '系统繁忙！';
             $retval['status'] = $e->getCode();
