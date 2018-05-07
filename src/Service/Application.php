@@ -554,10 +554,10 @@ class Application extends \Phalcon\Mvc\Application implements \Swallow\Bootstrap
                     $this->verifyMethod($logicName, $this->method); //验证方法
                 }
 
-                //模块调模块，不验证
+                //模块调模块不验证
                 if ('Module' != $this->transmissionFrom) {
                     //判断是否获取access_token 是则不验证
-                    if (!$this->isToGetToken && !$this->isTestVerify()) {
+                    if (!$this->isToGetToken && !$this->isTestVerify() && 0 != strpos($class, 'Eelly\\SDK\\')) {
                         //验证权限
                         $isLogin = $this->verifyPermissions($this->app, $class, $this->method, $isOld);
                         $this->secret = self::$tokenConfig['token'];
