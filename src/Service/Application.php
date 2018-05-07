@@ -616,7 +616,19 @@ class Application extends \Phalcon\Mvc\Application implements \Swallow\Bootstrap
                     $eellyClient->getSdkClient()->setAccessToken($accessToken);
                 }
                 $sdk = new $this->serviceName();
-                $res = call_user_func_array([$sdk, $this->method], $this->args);
+                $reflectionClass = new \ReflectionClass($this->serviceName);
+                $parameters = $reflectionClass->getMethod($this->method)->getParameters();
+                $argsNew = [];
+                if (!empty($this->args) && !empty($parameters)) {
+                    foreach ($parameters as $val) {
+                        if (isset($this->args[$val->name])) {
+                            $argsNew[] = $this->args[$val->name];
+                        } elseif ($val->isDefaultValueAvailable()) {
+                            $argsNew[] = $val->getDefaultValue();
+                        }
+                    }
+                }
+                $res = call_user_func_array([$sdk, $this->method], $argsNew);
             } elseif ($isOld) {
                 // 过渡版本 : android和ios客户端，厂+版本2.2.0，店+版本4.3.0之前的版本
                 $isTransition = in_array(strtolower($this->clientName), ['ios', 'android']) && (('buyer' == $this->clientUserType && $this->clientVersion < 430) || ('seller' == $this->clientUserType && $this->clientVersion < 220));
