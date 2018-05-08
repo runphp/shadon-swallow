@@ -84,11 +84,11 @@ class Conf
         self::$config[$source][$fileName] = array();
         $path = '';
         if ('System' == $source) {
-            $path = ROOT_PATH . '/data/config.' . $fileName . '.php';
+            $path = CONFIG_PATH . '/data/config.' . $fileName . '.php';
         } elseif ('Swallow' == $source) {
-            $path = ROOT_PATH . '/config/config.' . $fileName . '.php';
+            $path = CONFIG_PATH . '/config/config.' . $fileName . '.php';
         } else {
-            $path = ROOT_PATH . '/config/module/' . strtolower($source) . '/' . $fileName . '.php';
+            $path = CONFIG_PATH . '/config/module/' . strtolower($source) . '/' . $fileName . '.php';
         }
         if (! empty($path) && file_exists($path)) {
             self::$config[$source][$fileName] = include ($path);
