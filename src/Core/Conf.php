@@ -86,9 +86,9 @@ class Conf
         if ('System' == $source) {
             $path = CONFIG_PATH . '/data/config.' . $fileName . '.php';
         } elseif ('Swallow' == $source) {
-            $path = CONFIG_PATH . '/config/config.' . $fileName . '.php';
+            $path = CONFIG_PATH . '/config.' . $fileName . '.php';
         } else {
-            $path = CONFIG_PATH . '/config/module/' . strtolower($source) . '/' . $fileName . '.php';
+            $path = CONFIG_PATH . '/module/' . strtolower($source) . '/' . $fileName . '.php';
         }
         if (! empty($path) && file_exists($path)) {
             self::$config[$source][$fileName] = include ($path);
