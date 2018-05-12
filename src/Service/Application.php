@@ -621,13 +621,20 @@ class Application extends \Phalcon\Mvc\Application implements \Swallow\Bootstrap
                 $argsNew = [];
                 if (!empty($this->args) && !empty($parameters)) {
                     foreach ($parameters as $val) {
+
                         if (isset($this->args[$val->name])) {
                             $argsNew[] = $this->args[$val->name];
                         } elseif ($val->isDefaultValueAvailable()) {
                             $argsNew[] = $val->getDefaultValue();
+                        } else {
+                            // 非可选参数
+                            if(!$val->isOptional()) {
+                                throw new LogicException('参数错误', StatusCode::INVALID_ARGUMENT);
+                            }
                         }
                     }
                 }
+
                 $res = call_user_func_array([$sdk, $this->method], $argsNew);
             } elseif ($isOld) {
                 // 过渡版本 : android和ios客户端，厂+版本2.2.0，店+版本4.3.0之前的版本
@@ -729,7 +736,7 @@ class Application extends \Phalcon\Mvc\Application implements \Swallow\Bootstrap
             $retval['retval'] = $e->getArgs();
         } catch (\Eelly\Exception\LogicException $e) {
             $retval['info'] = $e->getMessage();
-            $retval['status'] = 701;
+            $retval['status'] = StatusCode::UNKNOW_ERROR;
         } catch (\Phalcon\Mvc\Model\Exception $e) {
             $retval['info'] = '系统繁忙！';
             $retval['status'] = $e->getCode();
