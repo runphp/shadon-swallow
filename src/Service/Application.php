@@ -696,13 +696,18 @@ class Application extends \Phalcon\Mvc\Application implements \Swallow\Bootstrap
                 ]);
 
                 if (200 == $data->getStatusCode()) {
-                    //$res = json_decode((string)$data->getBody(), true);
-                    //$res = \Swallow\Toolkit\Util\Json::decode2((string)$data->getBody());
-                    $res = $this->isPhinx ? \Swallow\Toolkit\Util\Json::decode2((string) $data->getBody()) : json_decode((string) $data->getBody(), true);
+                    $body = (string) $data->getBody();
+                    $res = $this->isPhinx ? \Swallow\Toolkit\Util\Json::decode2($body) : json_decode($body, true);
                 } else {
                     $res = [
                         'status' => $data->getStatusCode(),
                         'info'   => '服务器异常(www)',
+                    ];
+                }
+                if (!is_array($res)) {
+                    $res = [
+                        'status' => 500,
+                        'info'   => $body,
                     ];
                 }
                 // 第二代接口 end
