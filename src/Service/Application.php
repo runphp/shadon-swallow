@@ -1218,7 +1218,6 @@ class Application extends \Phalcon\Mvc\Application implements \Swallow\Bootstrap
 
             return $result;
         } else {
-            throw new LogicException(json_last_error_msg(), StatusCode::INVALID_ARGUMENT);
 
             $data = strrev($data);
             $iv = substr($data, 0, 8);
