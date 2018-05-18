@@ -1225,7 +1225,7 @@ class Application extends \Phalcon\Mvc\Application implements \Swallow\Bootstrap
             $length = strlen($data) - 14;
             $decodeData = substr($data, 8, $length);
             $data = json_decode($this->desCrypt->decrypt($decodeData), true);
-            $this->getLogger()->warning(__METHOD__, ['data' => $data, 'ip' => $this->request->getClientAddress()]);
+            $this->getLogger()->warning(__METHOD__, ['data' => $data, 'ip' => $this->request->getClientAddress(), 'userAgent' => $this->request->getUserAgent()]);
         }
 
         return $data;
