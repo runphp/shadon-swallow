@@ -707,8 +707,9 @@ class Application extends \Phalcon\Mvc\Application implements \Swallow\Bootstrap
                 if (!is_array($res)) {
                     $res = [
                         'status' => 500,
-                        'info'   => $body,
+                        'info'   => '服务器异常(data)',
                     ];
+                    $this->getLogger()->warning('Not Json', ['body' => $body]);
                 }
                 // 第二代接口 end
                 if (StatusCode::OK == $res['status']) {
