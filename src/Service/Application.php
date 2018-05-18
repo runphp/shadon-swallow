@@ -609,10 +609,11 @@ class Application extends \Phalcon\Mvc\Application implements \Swallow\Bootstrap
                                 'refresh_token',
                                 ['refresh_token' => $accessToken->getRefreshToken()]
                             );
+                            $cache->save($cacheKey, $accessToken, $accessToken->getExpires());
                         } catch (IdentityProviderException $e) {
                             $cache->remove($cacheKey);
+                            throw new LogicException('请重试', StatusCode::OVER_FLOW);
                         }
-                        $cache->save($cacheKey, $accessToken, $accessToken->getExpires());
                     }
                     $eellyClient->getSdkClient()->setAccessToken($accessToken);
                 }
