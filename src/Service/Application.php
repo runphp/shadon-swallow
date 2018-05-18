@@ -611,7 +611,7 @@ class Application extends \Phalcon\Mvc\Application implements \Swallow\Bootstrap
                             );
                             $cache->save($cacheKey, $accessToken, $accessToken->getExpires());
                         } catch (IdentityProviderException $e) {
-                            $cache->remove($cacheKey);
+                            $cache->delete($cacheKey);
                             throw new LogicException('请重试', StatusCode::OVER_FLOW);
                         }
                     }
