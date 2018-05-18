@@ -15,6 +15,7 @@ namespace Swallow\Service;
 
 use Eelly\SDK\EellyClient;
 use Eelly\SDK\Oauth\Api\TokenConvert;
+use League\OAuth2\Client\Provider\Exception\IdentityProviderException;
 use League\OAuth2\Client\Token\AccessToken;
 use Monolog\Handler\StreamHandler;
 use Monolog\Logger;
