@@ -329,7 +329,7 @@ class Application extends \Phalcon\Mvc\Application implements \Swallow\Bootstrap
         if ($this->isTestVerify()) {
             return json_encode($data);
         }
-        $retval '';
+        $retval = '';
         if (200 == $data['status']) {
             $this->isPhinx || $data['retval'] = Arrays::toString($data['retval']);
             $retval = $data['retval'];
