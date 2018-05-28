@@ -421,6 +421,9 @@ class Application extends \Phalcon\Mvc\Application implements \Swallow\Bootstrap
                 } else {
                     throw new LogicException('You do not have permission to request!', StatusCode::REQUEST_FORBIDDEN);
                 }
+                if (!isset($this->requestDataDecrypt['service_name'])) {
+                    throw new LogicException('参数错误', StatusCode::INVALID_ARGUMENT);
+                }
             }
             //转换参数
             $isMore = true;
@@ -620,14 +623,13 @@ class Application extends \Phalcon\Mvc\Application implements \Swallow\Bootstrap
                 $argsNew = [];
                 if (!empty($this->args) && !empty($parameters)) {
                     foreach ($parameters as $val) {
-
                         if (isset($this->args[$val->name])) {
                             $argsNew[] = $this->args[$val->name];
                         } elseif ($val->isDefaultValueAvailable()) {
                             $argsNew[] = $val->getDefaultValue();
                         } else {
                             // 非可选参数
-                            if(!$val->isOptional()) {
+                            if (!$val->isOptional()) {
                                 throw new LogicException('参数错误', StatusCode::INVALID_ARGUMENT);
                             }
                         }
@@ -1083,7 +1085,7 @@ class Application extends \Phalcon\Mvc\Application implements \Swallow\Bootstrap
      */
     private function verifyParam($params)
     {
-        if (empty($params['app']) || empty($params['service_name']) || empty($params['method']) ) {
+        if (empty($params['app']) || empty($params['service_name']) || empty($params['method'])) {
             return false;
         }
 
@@ -1223,7 +1225,6 @@ class Application extends \Phalcon\Mvc\Application implements \Swallow\Bootstrap
 
             return $result;
         } else {
-
             $data = strrev($data);
             $iv = substr($data, 0, 8);
             $this->desCrypt = new \Swallow\Toolkit\Encrypt\DesCrypt($key, $iv);
