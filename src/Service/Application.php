@@ -15,6 +15,7 @@ namespace Swallow\Service;
 
 use Eelly\SDK\EellyClient;
 use Eelly\SDK\Oauth\Api\TokenConvert;
+use League\OAuth2\Client\Provider\Exception\IdentityProviderException;
 use League\OAuth2\Client\Token\AccessToken;
 use Monolog\Handler\StreamHandler;
 use Monolog\Logger;
@@ -328,26 +329,23 @@ class Application extends \Phalcon\Mvc\Application implements \Swallow\Bootstrap
         if ($this->isTestVerify()) {
             return json_encode($data);
         }
-        $retval = $signature = '';
+        $retval = '';
         if (200 == $data['status']) {
             $this->isPhinx || $data['retval'] = Arrays::toString($data['retval']);
             $retval = $data['retval'];
-            if ($this->isRemoveEncrypt) {
-                $signature = ''; // TODO
-            } elseif (!empty($this->encryptVersion) && 'v2' == $this->encryptVersion) {
+            if (!empty($this->encryptVersion) && 'v2' == $this->encryptVersion) {
                 $signData = $data;
                 ksort($signData);
                 $checkSign = md5(json_encode($signData).$this->isToGetToken);
-                $signature = $checkSign;
             } elseif ($this->encrypt && null != $this->desCrypt) {
                 $retval = json_encode($retval);
                 $retval = $this->desCrypt->encrypt($retval);
                 !empty($this->encryptVersion) && 'v2' == $this->encryptVersion && $retval = base64_encode($retval);
             }
             //生成签名
-            $signature = $this->signature(json_encode($retval));
+            //$signature = $this->signature(json_encode($retval));
         }
-        $data['retval'] = ['data' => $retval, 'signature' => $signature];
+        $data['retval'] = ['data' => $retval, 'signature' => 'unsupport'];
         if (!$this->isRemoveEncrypt && APPLICATION_ENV != 'prod' && 0 == time() % 3) {
             $data = ['status' => 400, 'retval'=>null, 'info' => '接口请求升级中(去除加解密)'];
         }
@@ -423,6 +421,9 @@ class Application extends \Phalcon\Mvc\Application implements \Swallow\Bootstrap
                 } else {
                     throw new LogicException('You do not have permission to request!', StatusCode::REQUEST_FORBIDDEN);
                 }
+                if (!isset($this->requestDataDecrypt['service_name'])) {
+                    throw new LogicException('参数错误', StatusCode::INVALID_ARGUMENT);
+                }
             }
             //转换参数
             $isMore = true;
@@ -437,7 +438,7 @@ class Application extends \Phalcon\Mvc\Application implements \Swallow\Bootstrap
             $this->args = (isset($this->requestDataDecrypt['args']) && 'null' != $this->requestDataDecrypt['args'])
                 ? $this->requestDataDecrypt['args']
                 : null;
-            $this->timeStamp = $this->requestDataDecrypt['time'];
+            //$this->timeStamp = $this->requestDataDecrypt['time'];
             $version = isset($this->requestDataDecrypt['version']) ? $this->requestDataDecrypt['version'] : '';
             $this->client = isset($this->requestDataDecrypt['client']) ? $this->requestDataDecrypt['client'] : '';
             // 登陆信息
@@ -554,10 +555,10 @@ class Application extends \Phalcon\Mvc\Application implements \Swallow\Bootstrap
                     $this->verifyMethod($logicName, $this->method); //验证方法
                 }
 
-                //模块调模块，不验证
+                //模块调模块不验证
                 if ('Module' != $this->transmissionFrom) {
                     //判断是否获取access_token 是则不验证
-                    if (!$this->isToGetToken && !$this->isTestVerify()) {
+                    if (!$this->isToGetToken && !$this->isTestVerify() && 0 != strpos($class, 'Eelly\\SDK\\')) {
                         //验证权限
                         $isLogin = $this->verifyPermissions($this->app, $class, $this->method, $isOld);
                         $this->secret = self::$tokenConfig['token'];
@@ -572,7 +573,7 @@ class Application extends \Phalcon\Mvc\Application implements \Swallow\Bootstrap
             // 调用sdk
             if (0 === strpos($this->serviceName, 'Eelly\\SDK\\')) {
                 if (!class_exists($this->serviceName) || !method_exists($this->serviceName, $this->method)) {
-                    throw new LogicException('接口未找到', StatusCode::DATA_NOT_FOUND);
+                    throw new LogicException("接口未找到({$this->serviceName}:{$this->method})", StatusCode::DATA_NOT_FOUND);
                 }
                 // iniitialize eelly client
                 $redisConfig = (require 'config/'.APPLICATION_ENV.'/cache.php')['Redis'];
@@ -588,12 +589,18 @@ class Application extends \Phalcon\Mvc\Application implements \Swallow\Bootstrap
                     $cacheKey = __METHOD__.':'.$this->userLoginInfo['access_token'];
                     $accessToken = $cache->get($cacheKey);
                     while (!$accessToken instanceof AccessToken) {
+                        static $preExcepton = null;
                         try {
                             $accessToken = (new TokenConvert())->newMallLogin($this->userLoginInfo['access_token']);
                             $accessToken = new AccessToken($accessToken);
                             $cache->save($cacheKey, $accessToken, $accessToken->getExpires());
                         } catch (\Eelly\Exception\LogicException $e) {
-                            (new TokenConvert())->saveNewMallAccessToken($this->userLoginInfo['access_token'], ['uid' => $this->userLoginInfo['uid']]);
+                            if (null === $preExcepton) {
+                                (new TokenConvert())->saveNewMallAccessToken($this->userLoginInfo['access_token'], ['uid' => $this->userLoginInfo['uid']]);
+                                $preExcepton = $e;
+                            } else {
+                                throw new LogicException('请重新登录', StatusCode::DATA_NOT_FOUND, ['uid' => $this->userLoginInfo['uid']]);
+                            }
                         }
                     }
                     if ($accessToken->hasExpired()) {
@@ -602,15 +609,34 @@ class Application extends \Phalcon\Mvc\Application implements \Swallow\Bootstrap
                                 'refresh_token',
                                 ['refresh_token' => $accessToken->getRefreshToken()]
                             );
+                            $cache->save($cacheKey, $accessToken, $accessToken->getExpires());
                         } catch (IdentityProviderException $e) {
-                            $cache->remove($cacheKey);
+                            $cache->delete($cacheKey);
+                            throw new LogicException('请重试', StatusCode::OVER_FLOW);
                         }
-                        $cache->save($cacheKey, $accessToken, $accessToken->getExpires());
                     }
                     $eellyClient->getSdkClient()->setAccessToken($accessToken);
                 }
                 $sdk = new $this->serviceName();
-                $res = call_user_func_array([$sdk, $this->method], $this->args);
+                $reflectionClass = new \ReflectionClass($this->serviceName);
+                $parameters = $reflectionClass->getMethod($this->method)->getParameters();
+                $argsNew = [];
+                if (!empty($this->args) && !empty($parameters)) {
+                    foreach ($parameters as $val) {
+                        if (isset($this->args[$val->name])) {
+                            $argsNew[] = $this->args[$val->name];
+                        } elseif ($val->isDefaultValueAvailable()) {
+                            $argsNew[] = $val->getDefaultValue();
+                        } else {
+                            // 非可选参数
+                            if (!$val->isOptional()) {
+                                throw new LogicException('参数错误', StatusCode::INVALID_ARGUMENT);
+                            }
+                        }
+                    }
+                }
+
+                $res = call_user_func_array([$sdk, $this->method], $argsNew);
             } elseif ($isOld) {
                 // 过渡版本 : android和ios客户端，厂+版本2.2.0，店+版本4.3.0之前的版本
                 $isTransition = in_array(strtolower($this->clientName), ['ios', 'android']) && (('buyer' == $this->clientUserType && $this->clientVersion < 430) || ('seller' == $this->clientUserType && $this->clientVersion < 220));
@@ -669,14 +695,20 @@ class Application extends \Phalcon\Mvc\Application implements \Swallow\Bootstrap
                 ]);
 
                 if (200 == $data->getStatusCode()) {
-                    //$res = json_decode((string)$data->getBody(), true);
-                    //$res = \Swallow\Toolkit\Util\Json::decode2((string)$data->getBody());
-                    $res = $this->isPhinx ? \Swallow\Toolkit\Util\Json::decode2((string) $data->getBody()) : json_decode((string) $data->getBody(), true);
+                    $body = (string) $data->getBody();
+                    $res = $this->isPhinx ? \Swallow\Toolkit\Util\Json::decode2($body) : json_decode($body, true);
                 } else {
                     $res = [
                         'status' => $data->getStatusCode(),
                         'info'   => '服务器异常(www)',
                     ];
+                }
+                if (!is_array($res)) {
+                    $res = [
+                        'status' => 500,
+                        'info'   => '服务器异常(data)',
+                    ];
+                    $this->getLogger()->warning('Not Json', ['body' => $body]);
                 }
                 // 第二代接口 end
                 if (StatusCode::OK == $res['status']) {
@@ -709,6 +741,9 @@ class Application extends \Phalcon\Mvc\Application implements \Swallow\Bootstrap
             $retval['info'] = $e->getMessage();
             $retval['status'] = $e->getCode();
             $retval['retval'] = $e->getArgs();
+        } catch (\Eelly\Exception\LogicException $e) {
+            $retval['info'] = $e->getMessage();
+            $retval['status'] = StatusCode::UNKNOW_ERROR;
         } catch (\Phalcon\Mvc\Model\Exception $e) {
             $retval['info'] = '系统繁忙！';
             $retval['status'] = $e->getCode();
@@ -741,10 +776,12 @@ class Application extends \Phalcon\Mvc\Application implements \Swallow\Bootstrap
      *
      * @author zengzhihao<zengzhihao@eelly.net>
      *
+     * @deprecated
      * @since  2015年12月1日
      */
     public function signature($msg)
     {
+        return 'unsupport';
         //生成安全签名
         $sha1 = new \Swallow\Toolkit\Encrypt\Sha1();
         $array = $sha1->getSHA1($msg, $this->secret, $this->timeStamp);
@@ -1048,7 +1085,7 @@ class Application extends \Phalcon\Mvc\Application implements \Swallow\Bootstrap
      */
     private function verifyParam($params)
     {
-        if (empty($params['app']) || empty($params['service_name']) || empty($params['method']) || empty($params['time'])) {
+        if (empty($params['app']) || empty($params['service_name']) || empty($params['method'])) {
             return false;
         }
 
@@ -1194,7 +1231,7 @@ class Application extends \Phalcon\Mvc\Application implements \Swallow\Bootstrap
             $length = strlen($data) - 14;
             $decodeData = substr($data, 8, $length);
             $data = json_decode($this->desCrypt->decrypt($decodeData), true);
-            $this->getLogger()->warning(__METHOD__, ['data' => $data, 'ip' => $this->request->getClientAddress()]);
+            $this->getLogger()->warning(__METHOD__, ['data' => $data, 'ip' => $this->request->getClientAddress(), 'userAgent' => $this->request->getUserAgent()]);
         }
 
         return $data;
