@@ -329,26 +329,23 @@ class Application extends \Phalcon\Mvc\Application implements \Swallow\Bootstrap
         if ($this->isTestVerify()) {
             return json_encode($data);
         }
-        $retval = $signature = '';
+        $retval '';
         if (200 == $data['status']) {
             $this->isPhinx || $data['retval'] = Arrays::toString($data['retval']);
             $retval = $data['retval'];
-            if ($this->isRemoveEncrypt) {
-                $signature = ''; // TODO
-            } elseif (!empty($this->encryptVersion) && 'v2' == $this->encryptVersion) {
+            if (!empty($this->encryptVersion) && 'v2' == $this->encryptVersion) {
                 $signData = $data;
                 ksort($signData);
                 $checkSign = md5(json_encode($signData).$this->isToGetToken);
-                $signature = $checkSign;
             } elseif ($this->encrypt && null != $this->desCrypt) {
                 $retval = json_encode($retval);
                 $retval = $this->desCrypt->encrypt($retval);
                 !empty($this->encryptVersion) && 'v2' == $this->encryptVersion && $retval = base64_encode($retval);
             }
             //生成签名
-            $signature = $this->signature(json_encode($retval));
+            //$signature = $this->signature(json_encode($retval));
         }
-        $data['retval'] = ['data' => $retval, 'signature' => $signature];
+        $data['retval'] = ['data' => $retval, 'signature' => 'unsupport'];
         if (!$this->isRemoveEncrypt && APPLICATION_ENV != 'prod' && 0 == time() % 3) {
             $data = ['status' => 400, 'retval'=>null, 'info' => '接口请求升级中(去除加解密)'];
         }
@@ -438,7 +435,7 @@ class Application extends \Phalcon\Mvc\Application implements \Swallow\Bootstrap
             $this->args = (isset($this->requestDataDecrypt['args']) && 'null' != $this->requestDataDecrypt['args'])
                 ? $this->requestDataDecrypt['args']
                 : null;
-            $this->timeStamp = $this->requestDataDecrypt['time'];
+            //$this->timeStamp = $this->requestDataDecrypt['time'];
             $version = isset($this->requestDataDecrypt['version']) ? $this->requestDataDecrypt['version'] : '';
             $this->client = isset($this->requestDataDecrypt['client']) ? $this->requestDataDecrypt['client'] : '';
             // 登陆信息
@@ -777,10 +774,12 @@ class Application extends \Phalcon\Mvc\Application implements \Swallow\Bootstrap
      *
      * @author zengzhihao<zengzhihao@eelly.net>
      *
+     * @deprecated
      * @since  2015年12月1日
      */
     public function signature($msg)
     {
+        return 'unsupport';
         //生成安全签名
         $sha1 = new \Swallow\Toolkit\Encrypt\Sha1();
         $array = $sha1->getSHA1($msg, $this->secret, $this->timeStamp);
@@ -1084,7 +1083,7 @@ class Application extends \Phalcon\Mvc\Application implements \Swallow\Bootstrap
      */
     private function verifyParam($params)
     {
-        if (empty($params['app']) || empty($params['service_name']) || empty($params['method']) || empty($params['time'])) {
+        if (empty($params['app']) || empty($params['service_name']) || empty($params['method']) ) {
             return false;
         }
 
