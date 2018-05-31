@@ -1204,7 +1204,7 @@ class Application extends \Phalcon\Mvc\Application implements \Swallow\Bootstrap
      */
     private function decode($data, $transmissionFrom, $transmissionVersion)
     {
-        if (empty($data)) {
+        if (empty($data) || !is_string($data)) {
             throw new LogicException('Request parameter error!', StatusCode::SERVICE_BAD_REQUEST);
         }
         if ($this->isToGetToken) {
