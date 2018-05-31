@@ -8,6 +8,8 @@
  * @license    衣联网版权所有
  */
 namespace Swallow\Toolkit\Encrypt;
+use Swallow\Exception\LogicException;
+use Swallow\Exception\StatusCode;
 
 /**
  * 常用对称加密算法类 
@@ -65,7 +67,7 @@ class DesCrypt
     public function setKey($key)
     {
         if (strlen($key) != 24) {
-            exit('DesCrypt key size must 24 bits');
+            throw new LogicException('DesCrypt key size must 24 bits', StatusCode::SERVICE_BAD_REQUEST);
         }
         $this->key = $key;
     }
@@ -88,7 +90,7 @@ class DesCrypt
     public function setIv($iv)
     {
         if (strlen($iv) != 8) {
-            exit('DesCrypt iv size must 8 bits');
+            throw new LogicException('DesCrypt iv size must 8 bits', StatusCode::SERVICE_BAD_REQUEST);
         }
         $this->iv = $iv;
     }
