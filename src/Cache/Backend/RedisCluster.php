@@ -36,4 +36,13 @@ class RedisCluster extends Redis
         $options = $this->_options;
         $this->_redis = new RedisClusterResource('', $options['seeds'], $options['timeout'], $options['read_timeout']);
     }
+
+    /**
+     * @return RedisClusterResource
+     */
+    public function getRedis()
+    {
+        $this->_connect();
+        return $this->_redis;
+    }
 }
