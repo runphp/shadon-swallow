@@ -1,10 +1,14 @@
 <?php
+
+declare(strict_types=1);
+
 /*
- * PHP version 5.5
+ * This file is part of eelly package.
  *
- * @copyright Copyright (c) 2012-2017 EELLY Inc. (http://www.eelly.com)
- * @link      http://www.eelly.com
- * @license   衣联网版权所有
+ * (c) eelly.com
+ *
+ * For the full copyright and license information, please view the LICENSE
+ * file that was distributed with this source code.
  */
 
 namespace Swallow\Di;
@@ -14,6 +18,7 @@ use Swallow\Base\Logic;
 use Swallow\Core\Conf;
 use Swallow\Events\Event\CacheListener;
 use Swallow\Events\Event\DeprecatedListener;
+use Swallow\Events\Event\TransactionListener;
 use Swallow\Events\Manager as EventsManager;
 use Swallow\Mvc\Collection\Manager as CollectionManager;
 
@@ -45,8 +50,9 @@ class FactoryDefault extends \Phalcon\Di\FactoryDefault
         $this->_services['eventsManager'] = new Service('eventsManager', function () {
             $eventsManager = new EventsManager();
             $eventsManager->enablePriorities(true);
-            $eventsManager->attach(Logic::class, $this->getShared(CacheListener::class), 50);
-            MODULE_DEBUG && $eventsManager->attach(Logic::class, $this->getShared(DeprecatedListener::class), 100);
+            $eventsManager->attach(Logic::class, $this->getShared(TransactionListener::class), 50);
+            $eventsManager->attach(Logic::class, $this->getShared(CacheListener::class), 100);
+            MODULE_DEBUG && $eventsManager->attach(Logic::class, $this->getShared(DeprecatedListener::class), 150);
 
             return $eventsManager;
         }, true);
