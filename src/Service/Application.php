@@ -637,8 +637,11 @@ class Application extends \Phalcon\Mvc\Application implements \Swallow\Bootstrap
                         }
                     }
                 }
-
-                $res = call_user_func_array([$sdk, $this->method], $argsNew);
+                try {
+                    $res = call_user_func_array([$sdk, $this->method], $argsNew);
+                } catch (\ArgumentCountError $e) {
+                    throw new LogicException('Too few arguments', StatusCode::BAD_REQUEST);
+                }
             } elseif ($isOld) {
                 // 过渡版本 : android和ios客户端，厂+版本2.2.0，店+版本4.3.0之前的版本
                 $isTransition = in_array(strtolower($this->clientName), ['ios', 'android']) && (('buyer' == $this->clientUserType && $this->clientVersion < 430) || ('seller' == $this->clientUserType && $this->clientVersion < 220));
