@@ -361,11 +361,13 @@ class Application extends \Phalcon\Mvc\Application implements \Swallow\Bootstrap
         $retval = ['status' => StatusCode::OK, 'info' => '', 'retval' => null];
         try {
             $eventsManager = $this->getEventsManager();
+
             if (is_object($eventsManager)) {
                 if (false === $eventsManager->fire('application:boot', $this)) {
                     throw new \ErrorException('application:boot error');
                 }
             }
+
             $defaultDi = $this->getDI();
             /* @var \Phalcon\Http\Request $request */
             $request = $defaultDi->getRequest();
@@ -1204,6 +1206,9 @@ class Application extends \Phalcon\Mvc\Application implements \Swallow\Bootstrap
      */
     private function decode($data, $transmissionFrom, $transmissionVersion)
     {
+        if (is_array($data) && !empty($data)) {
+            return $data;
+        }
         if (empty($data) || !is_string($data)) {
             throw new LogicException('Request parameter error!', StatusCode::SERVICE_BAD_REQUEST);
         }
