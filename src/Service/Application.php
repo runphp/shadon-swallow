@@ -595,7 +595,7 @@ class Application extends \Phalcon\Mvc\Application implements \Swallow\Bootstrap
                         try {
                             $accessToken = (new TokenConvert())->newMallLogin($this->userLoginInfo['access_token']);
                             $accessToken = new AccessToken($accessToken);
-                            $cache->save($cacheKey, $accessToken, $accessToken->getExpires());
+                            $cache->save($cacheKey, $accessToken, $accessToken->getExpires() - 10 /* 提前10秒过期 */);
                         } catch (\Eelly\Exception\LogicException $e) {
                             if (null === $preExcepton) {
                                 (new TokenConvert())->saveNewMallAccessToken($this->userLoginInfo['access_token'], ['uid' => $this->userLoginInfo['uid']]);
@@ -611,7 +611,7 @@ class Application extends \Phalcon\Mvc\Application implements \Swallow\Bootstrap
                                 'refresh_token',
                                 ['refresh_token' => $accessToken->getRefreshToken()]
                             );
-                            $cache->save($cacheKey, $accessToken, $accessToken->getExpires());
+                            $cache->save($cacheKey, $accessToken, $accessToken->getExpires() - 10 /* 提前10秒过期 */);
                         } catch (IdentityProviderException $e) {
                             $cache->delete($cacheKey);
                             throw new LogicException('请重试', StatusCode::OVER_FLOW);
@@ -620,28 +620,7 @@ class Application extends \Phalcon\Mvc\Application implements \Swallow\Bootstrap
                     $eellyClient->getSdkClient()->setAccessToken($accessToken);
                 }
                 $sdk = new $this->serviceName();
-                $reflectionClass = new \ReflectionClass($this->serviceName);
-                $parameters = $reflectionClass->getMethod($this->method)->getParameters();
-                $argsNew = [];
-                if (!empty($this->args) && !empty($parameters)) {
-                    foreach ($parameters as $val) {
-                        if (isset($this->args[$val->name])) {
-                            $argsNew[] = $this->args[$val->name];
-                        } elseif ($val->isDefaultValueAvailable()) {
-                            $argsNew[] = $val->getDefaultValue();
-                        } else {
-                            // 非可选参数
-                            if (!$val->isOptional()) {
-                                throw new LogicException('参数错误', StatusCode::INVALID_ARGUMENT);
-                            }
-                        }
-                    }
-                }
-                try {
-                    $res = call_user_func_array([$sdk, $this->method], $argsNew);
-                } catch (\ArgumentCountError $e) {
-                    throw new LogicException('Too few arguments', StatusCode::BAD_REQUEST);
-                }
+                $res = call_user_func_array([$sdk, $this->method], $this->getNewArgs($this->serviceName, $this->method, $this->args));
             } elseif ($isOld) {
                 // 过渡版本 : android和ios客户端，厂+版本2.2.0，店+版本4.3.0之前的版本
                 $isTransition = in_array(strtolower($this->clientName), ['ios', 'android']) && (('buyer' == $this->clientUserType && $this->clientVersion < 430) || ('seller' == $this->clientUserType && $this->clientVersion < 220));
@@ -1327,5 +1306,33 @@ class Application extends \Phalcon\Mvc\Application implements \Swallow\Bootstrap
         }
 
         return true;
+    }
+
+    /**
+     * @param string $class
+     * @param string $method
+     * @param array  $params
+     *
+     * @return array
+     */
+    private function getNewArgs($class, $method, array $params)
+    {
+        $reflectionMethod = new \ReflectionMethod($class, $method);
+        $args = [];
+        foreach ($reflectionMethod->getParameters() as $parameter) {
+            if (array_key_exists($parameter->getName(), $params)) {
+                $args[$parameter->getPosition()] = $params[$parameter->getName()];
+                if ($parameter->hasType()) {
+                    $expectedType = $parameter->getType();
+                    settype($args[$parameter->getPosition()], (string) $expectedType);
+                }
+            } elseif ($parameter->isDefaultValueAvailable()) {
+                $args[$parameter->getPosition()] = $parameter->getDefaultValue();
+            } else {
+                throw new LogicException('参数错误', StatusCode::INVALID_ARGUMENT);
+            }
+        }
+
+        return $args;
     }
 }
