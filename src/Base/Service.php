@@ -84,7 +84,7 @@ abstract class Service extends Base
     public function getUid()
     {
         if (0 == self::$uid) {
-            throw new LogicException('未登录', StatusCode::REQUEST_FORBIDDEN);
+            throw new LogicException('未登录', StatusCode::USER_ACCESS_TOKEN_INVALID);
         }
 
         return self::$uid;
