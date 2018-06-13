@@ -601,7 +601,7 @@ class Application extends \Phalcon\Mvc\Application implements \Swallow\Bootstrap
                                 (new TokenConvert())->saveNewMallAccessToken($this->userLoginInfo['access_token'], ['uid' => $this->userLoginInfo['uid']]);
                                 $preExcepton = $e;
                             } else {
-                                throw new LogicException('请重新登录', StatusCode::DATA_NOT_FOUND, ['uid' => $this->userLoginInfo['uid']]);
+                                throw new LogicException('请重新登录', 708 /* 用户token失效 */, ['uid' => $this->userLoginInfo['uid']]);
                             }
                         }
                     }
@@ -614,7 +614,7 @@ class Application extends \Phalcon\Mvc\Application implements \Swallow\Bootstrap
                             $cache->save($cacheKey, $accessToken, $accessToken->getExpires() - 10 /* 提前10秒过期 */);
                         } catch (IdentityProviderException $e) {
                             $cache->delete($cacheKey);
-                            throw new LogicException('请重试', StatusCode::OVER_FLOW);
+                            throw new LogicException('请重试', 708 /* 用户token失效 */);
                         }
                     }
                     $eellyClient->getSdkClient()->setAccessToken($accessToken);
