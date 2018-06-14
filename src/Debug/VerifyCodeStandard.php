@@ -1,10 +1,14 @@
 <?php
+
+declare(strict_types=1);
+
 /*
- * PHP version 5.5
+ * This file is part of eelly package.
  *
- * @copyright Copyright (c) 2012-2017 EELLY Inc. (http://www.eelly.com)
- * @link      http://www.eelly.com
- * @license   衣联网版权所有
+ * (c) eelly.com
+ *
+ * For the full copyright and license information, please view the LICENSE
+ * file that was distributed with this source code.
  */
 
 namespace Swallow\Debug;
@@ -78,7 +82,7 @@ class VerifyCodeStandard
      *
      * @param string $className 类全路径
      */
-    public static function verify($className)
+    public static function verify($className): void
     {
         self::$className = $className;
         self::$reflector = Reflection::getClass(self::$className);
@@ -110,7 +114,7 @@ class VerifyCodeStandard
      */
     private static function isVerify()
     {
-        if (substr(self::$className, 0, 8) == 'AopProxy') {
+        if ('AopProxy' == substr(self::$className, 0, 8)) {
             return false;
         }
         static $filemtimeArr = [];
@@ -130,7 +134,7 @@ class VerifyCodeStandard
      * 保存验证结果
      * 持久化 MD5(文件路径) 文件更新时间.
      */
-    private static function saveVerifyResult()
+    private static function saveVerifyResult(): void
     {
         $filemtime = filemtime(self::$fileName); // 获取文件修改时间
         $Cache = Cache::getInstance()->set(self::getCacheKey(self::$fileName), $filemtime, '_none_');
@@ -165,7 +169,7 @@ class VerifyCodeStandard
     /**
      * 验证类命名空间规范.
      */
-    private static function verifyClassNamespace()
+    private static function verifyClassNamespace(): void
     {
         if (self::$reflector->inNamespace()) { // 是否采用命名空间
             $spaceName = self::$reflector->getNamespaceName();
@@ -185,12 +189,12 @@ class VerifyCodeStandard
     /**
      * 验证类注释规范.
      */
-    private static function verifyClassDocComment()
+    private static function verifyClassDocComment(): void
     {
         $docComment = trim(self::$reflector->getDocComment());
         if ($docComment) {
             $msgStatus = false;
-            if (substr($docComment, 0, 3) != '/**' || substr($docComment, -2) != '*/') {
+            if ('/**' != substr($docComment, 0, 3) || '*/' != substr($docComment, -2)) {
                 $msgStatus = true;
             }
             $docArr = ['@author', '@since'];
@@ -213,7 +217,7 @@ class VerifyCodeStandard
     /**
      * 验证类命名规范.
      */
-    private static function verifyClassName()
+    private static function verifyClassName(): void
     {
         $name = self::$reflector->getShortName();
         if (!preg_match(self::$capital, $name)) {
@@ -224,7 +228,7 @@ class VerifyCodeStandard
     /**
      * 验证类属性规范.
      */
-    private static function verifyProperty()
+    private static function verifyProperty(): void
     {
         $properties = self::$reflector->getProperties();
         foreach ($properties as $property) {
@@ -238,7 +242,7 @@ class VerifyCodeStandard
      *
      * @param \ReflectionProperty $property
      */
-    private static function verifyPropertyName(\ReflectionProperty $property)
+    private static function verifyPropertyName(\ReflectionProperty $property): void
     {
         $name = $property->getName();
         if (!preg_match(self::$lower, $name)) {
@@ -251,10 +255,10 @@ class VerifyCodeStandard
      *
      * @param \ReflectionProperty $property
      */
-    private static function verifyPropertyDocComment(\ReflectionProperty $property)
+    private static function verifyPropertyDocComment(\ReflectionProperty $property): void
     {
         $docComment = $property->getDocComment();
-        if (substr($docComment, 0, 3) != '/**' || substr($docComment, -2) != '*/') {
+        if ('/**' != substr($docComment, 0, 3) || '*/' != substr($docComment, -2)) {
             throw new CodeStyleException(self::$className.'：属性'.$property->getName().' 的注释不符合规则，请仔细阅读规则文档！');
         }
 
@@ -266,7 +270,7 @@ class VerifyCodeStandard
     /**
      * 验证方法相关规范.
      */
-    private static function verifyMethod()
+    private static function verifyMethod(): void
     {
         foreach (self::$reflector->getMethods() as $method) {
             if ($method->class == self::$className) {
@@ -290,12 +294,12 @@ class VerifyCodeStandard
      * @param \ReflectionMethod $reflectionMethod
      * @param string            $name
      */
-    private static function verifyMethodDocComment(\ReflectionMethod $reflectionMethod, $name)
+    private static function verifyMethodDocComment(\ReflectionMethod $reflectionMethod, $name): void
     {
         $docComment = $reflectionMethod->getDocComment();
         if ($docComment) {
             $msgStatus = false;
-            if (substr($docComment, 0, 3) != '/**' || substr($docComment, -2) != '*/') {
+            if ('/**' != substr($docComment, 0, 3) || '*/' != substr($docComment, -2)) {
                 if ($msgStatus) {
                     throw new CodeStyleException(self::$className.'：方法 '.$name.' 的注释不符合规则，请仔细阅读规则文档！');
                 }
@@ -332,17 +336,14 @@ class VerifyCodeStandard
      * @param string $name
      * @param string $docComment
      */
-    private static function verifyAnnotations($name, $docComment)
+    private static function verifyAnnotations($name, $docComment): void
     {
         $className = explode('\\', self::$className);
-        if (strpos($docComment, '* @catch') && $className[1] != 'Service') {
+        if (strpos($docComment, '* @catch') && 'Service' != $className[1]) {
             throw new CodeStyleException(self::$className.'：方法 '.$name.' 的@catch注解使用不正确，请仔细阅读规则文档！');
         }
-        if (strpos($docComment, '* @comment') && $className[1] != 'Service') {
+        if (strpos($docComment, '* @comment') && 'Service' != $className[1]) {
             throw new CodeStyleException(self::$className.'：方法 '.$name.' 的@comment注解使用不正确，请仔细阅读规则文档！');
-        }
-        if (strpos($docComment, '* @async') && $className[1] != 'Service') {
-            throw new CodeStyleException(self::$className.'：方法 '.$name.' 的@async注解使用不正确，请仔细阅读规则文档！');
         }
         if (strpos($docComment, '* @cache') && !in_array($className[1], ['Logic', 'Model'])) {
             throw new CodeStyleException(self::$className.'：方法 '.$name.' 的@cache注解使用不正确，请仔细阅读规则文档！');
@@ -358,7 +359,7 @@ class VerifyCodeStandard
      * @param \ReflectionMethod $reflectionMethod
      * @param string            $name
      */
-    private static function verifyMethodName(\ReflectionMethod $reflectionMethod, $name)
+    private static function verifyMethodName(\ReflectionMethod $reflectionMethod, $name): void
     {
         if (!$reflectionMethod->isConstructor() && !$reflectionMethod->isDestructor() && !preg_match(self::$lower, $name)) {
             throw new CodeStyleException(self::$className.'：类的 '.$name.' 方法不符合首字母小写驼峰命名规则，请仔细阅读规则文档！');
@@ -371,7 +372,7 @@ class VerifyCodeStandard
      * @param \ReflectionMethod $reflectionMethod
      * @param string            $name
      */
-    private static function verifyMethodModifier(\ReflectionMethod $reflectionMethod, $name)
+    private static function verifyMethodModifier(\ReflectionMethod $reflectionMethod, $name): void
     {
         /*
          * $modifiers = implode(' ', \Reflection::getModifierNames($reflectionMethod->getModifiers())); echo $modifiers.'='.$name; echo '<br>';
@@ -384,7 +385,7 @@ class VerifyCodeStandard
      * @param ReflectionMethod $reflectionMethod
      * @param string           $name
      */
-    private static function verifyMethodLine(\ReflectionMethod $reflectionMethod, $name)
+    private static function verifyMethodLine(\ReflectionMethod $reflectionMethod, $name): void
     {
         $endLine = $reflectionMethod->getEndLine();
         $startLine = $reflectionMethod->getStartLine();

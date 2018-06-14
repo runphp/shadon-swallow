@@ -1,10 +1,14 @@
 <?php
+
+declare(strict_types=1);
+
 /*
- * PHP version 5.5
+ * This file is part of eelly package.
  *
- * @copyright Copyright (c) 2012-2017 EELLY Inc. (http://www.eelly.com)
- * @link      http://www.eelly.com
- * @license   衣联网版权所有
+ * (c) eelly.com
+ *
+ * For the full copyright and license information, please view the LICENSE
+ * file that was distributed with this source code.
  */
 
 namespace Swallow\Annotations;
@@ -102,6 +106,14 @@ class AnnotationProxy extends Injectable
     }
 
     /**
+     * Get proxy object.
+     */
+    public function _getProxyObject()
+    {
+        return $this->_proxyObject;
+    }
+
+    /**
      * 设置方法返回值
      *
      *
@@ -111,12 +123,12 @@ class AnnotationProxy extends Injectable
      *
      * @since  2017年4月25日
      */
-    public function _setMethodReturnValue($value)
+    public function _setMethodReturnValue($value): void
     {
         $this->_methodReturnValue = $value;
     }
 
-    private function _isInitial()
+    private function _isInitial(): void
     {
         if (!$this->_isInitial) {
             $closure = $this->_initializer;

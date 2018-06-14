@@ -89,6 +89,8 @@ class MsgService extends Service
         $ope = $this->opeArr[$targetType];
         $bodyContent = [
             'msg' => $msg['msg'],
+            'type' => !empty($ext['ext_type']) ? $ext['ext_type'] : '',
+            'bodies' => !empty($msg['bodies']) ? $msg['bodies'] : [],
         ];
         $msgType = !empty($ext['ext_type']) ? $this->msgType['custom'] : $this->msgType['txt'];
         $body = [

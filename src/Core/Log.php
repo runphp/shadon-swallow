@@ -68,7 +68,7 @@ class Log
         $stream = LOG_PATH.'/app.'.date('Ymd').'.txt';
         $handler = new \Monolog\Handler\StreamHandler($stream);
         $logger->pushHandler($handler);
-        $dingding = require ROOT_PATH.'/config/config.dingding.php';
+        $dingding = require CONFIG_PATH.'/config.dingding.php';
         $logger->pushHandler(new DingDingHandler($dingding['accessToken']));
         if (PHP_SAPI == 'cli' && self::$config['is_debug']) {
             $handler = new \Monolog\Handler\StreamHandler('php://stdout');

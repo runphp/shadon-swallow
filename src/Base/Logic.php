@@ -1,10 +1,14 @@
 <?php
+
+declare(strict_types=1);
+
 /*
- * PHP version 5.5
+ * This file is part of eelly package.
  *
- * @copyright Copyright (c) 2012-2017 EELLY Inc. (http://www.eelly.com)
- * @link      http://www.eelly.com
- * @license   衣联网版权所有
+ * (c) eelly.com
+ *
+ * For the full copyright and license information, please view the LICENSE
+ * file that was distributed with this source code.
  */
 
 namespace Swallow\Base;
@@ -33,7 +37,7 @@ abstract class Logic extends Base
      *
      * @var bool
      */
-    const IS_EXIST_SERVICE = false;
+    public const IS_EXIST_SERVICE = false;
 
     /**
      * 构造器.
@@ -67,11 +71,13 @@ abstract class Logic extends Base
 
         $proxyObject = $annotationProxyFactory->createProxy($calledClass, function () use ($args, $calledClass) {
             $group = strstr($calledClass, '\\', true);
-            if ($args) {
-                $instance = call_user_func_array($calledClass.'::getInstanceTraits', $args);
-            } else {
-                $instance = $calledClass::getInstanceTraits();
+            $reflectionClass = new \ReflectionClass($calledClass);
+            $instance = $reflectionClass->newInstanceWithoutConstructor();
+            $constructor = $reflectionClass->getConstructor();
+            if (!$constructor->isPublic()) {
+                $constructor->setAccessible(true);
             }
+            $constructor->invokeArgs($instance, $args);
             $instance->setModuleName($group);
 
             return $instance;
@@ -100,7 +106,7 @@ abstract class Logic extends Base
         if (isset($r)) {
             return $r;
         }
-        if (Di::getInstance()->getShared('clientInfoNew')->getClearCache() == 'cache' && (DEBUG_MODE || $_ENV['isInternalUser'])) {
+        if ('cache' == Di::getInstance()->getShared('clientInfoNew')->getClearCache() && (DEBUG_MODE || $_ENV['isInternalUser'])) {
             $r = true;
         } else {
             $r = false;
