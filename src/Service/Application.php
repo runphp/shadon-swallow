@@ -36,7 +36,7 @@ use Whoops\Handler\PlainTextHandler;
  *
  * @version   1.0
  */
-class Application extends \Phalcon\Mvc\Application implements \Swallow\Bootstrap\ApiStatisticsInterface
+class Application extends \Phalcon\Mvc\Application
 {
     /**
      * token信息.
@@ -324,11 +324,6 @@ class Application extends \Phalcon\Mvc\Application implements \Swallow\Bootstrap
             $eventsManager->fire('application:beforeBootstrap', $this);
         }
         $data = $this->handle();
-        //日志记录
-        $this->logging($data);
-        if ($this->isTestVerify()) {
-            return json_encode($data);
-        }
         $retval = '';
         if (200 == $data['status']) {
             $this->isPhinx || $data['retval'] = Arrays::toString($data['retval']);
@@ -342,10 +337,8 @@ class Application extends \Phalcon\Mvc\Application implements \Swallow\Bootstrap
                 $retval = $this->desCrypt->encrypt($retval);
                 !empty($this->encryptVersion) && 'v2' == $this->encryptVersion && $retval = base64_encode($retval);
             }
-            //生成签名
-            //$signature = $this->signature(json_encode($retval));
         }
-        $data['retval'] = ['data' => $retval, 'signature' => 'unsupport'];
+        $data['retval'] = ['data' => $retval, 'signature' => 'deprecated'];
         if (!$this->isRemoveEncrypt && APPLICATION_ENV != 'prod' && 0 == time() % 3) {
             $data = ['status' => 400, 'retval'=>null, 'info' => '接口请求升级中(去除加解密)'];
         }
@@ -509,15 +502,6 @@ class Application extends \Phalcon\Mvc\Application implements \Swallow\Bootstrap
                 foreach ($this->args['params'] as $key => $newArg) {
                     $isOld = false;
                     if (false === strpos($newArg['module'], '\\')) {
-                        //新接口
-                        //$class = empty($this->client) ? $this->app . '\Service\\' . $newArg['module'] : $this->app . '\Service\\' . $this->client . '\\' .$newArg['module'];
-                        //新接口校验
-                        //$logicName = str_replace('\\Service\\', '\\Logic\\', $class);
-                        //$logicName = preg_replace('/Service$/', 'Logic', $logicName);
-                        //$this->verifyClass($class, $logicName); //验证类
-                        //$this->verifyMethod($logicName, $newArg['method']); //验证方法
-                        //$newMethods[$key] = $newArg;
-                        //多接口调用屏蔽新接口
                         throw new LogicException('不允许调用新接口', StatusCode::SERVICE_BAD_REQUEST);
                     } else {
                         //旧接口
@@ -620,7 +604,11 @@ class Application extends \Phalcon\Mvc\Application implements \Swallow\Bootstrap
                     $eellyClient->getSdkClient()->setAccessToken($accessToken);
                 }
                 $sdk = new $this->serviceName();
-                $res = call_user_func_array([$sdk, $this->method], $this->getNewArgs($this->serviceName, $this->method, $this->args));
+                try {
+                    $res = call_user_func_array([$sdk, $this->method], $this->getNewArgs($this->serviceName, $this->method, $this->args));
+                } catch (\GuzzleHttp\Exception\ClientException $e) {
+                    throw new \LogicException($e->getMessage(), 708 /* 用户token失效 */);
+                }
             } elseif ($isOld) {
                 // 过渡版本 : android和ios客户端，厂+版本2.2.0，店+版本4.3.0之前的版本
                 $isTransition = in_array(strtolower($this->clientName), ['ios', 'android']) && (('buyer' == $this->clientUserType && $this->clientVersion < 430) || ('seller' == $this->clientUserType && $this->clientVersion < 220));
@@ -751,29 +739,6 @@ class Application extends \Phalcon\Mvc\Application implements \Swallow\Bootstrap
         }
 
         return $retval;
-    }
-
-    /**
-     * 生成签名.
-     *
-     * @param string $msg 消息
-     *
-     * @author zengzhihao<zengzhihao@eelly.net>
-     *
-     * @deprecated
-     * @since  2015年12月1日
-     */
-    public function signature($msg)
-    {
-        return 'unsupport';
-        //生成安全签名
-        $sha1 = new \Swallow\Toolkit\Encrypt\Sha1();
-        $array = $sha1->getSHA1($msg, $this->secret, $this->timeStamp);
-        if (200 != $array[0]) {
-            throw new LogicException('signature error!', $array[0]);
-        }
-
-        return $array[1];
     }
 
     /**
