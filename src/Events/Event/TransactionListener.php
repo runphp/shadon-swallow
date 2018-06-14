@@ -26,6 +26,8 @@ class TransactionListener extends AbstractListener
 {
     public const ANNOTATION_NAME = 'Transaction';
 
+    public const ANNOTATION_NAME_ALIAS = 'trans';
+
     public function beforeMethod(Event $event, AnnotationProxy $object, array $data)
     {
         list($class, $method, $params) = $data;
@@ -33,7 +35,7 @@ class TransactionListener extends AbstractListener
         if (false === $collection) {
             return true;
         }
-        if ($collection->has(self::ANNOTATION_NAME)) {
+        if ($collection->has(self::ANNOTATION_NAME) || $collection->has(self::ANNOTATION_NAME_ALIAS)) {
             $db = Db::getInstance();
             $db->beginTransaction();
             try {
