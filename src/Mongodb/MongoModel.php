@@ -67,6 +67,16 @@ class MongoModel extends Mongodb
         parent::__construct($config, $db, $collection);
     }
 
+    public static function getInstance()
+    {
+        static $instance;
+        if (null === $instance) {
+            $instance = new static();
+        }
+
+        return $instance;
+    }
+
     /**
      * 集合选择（含手动按日期分集合）.
      *

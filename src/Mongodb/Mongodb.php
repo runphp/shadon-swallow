@@ -137,43 +137,6 @@ abstract class Mongodb extends Base
     }
 
     /**
-     * 获取单例.
-     *
-     * @return static
-     */
-    public static function getInstance()
-    {
-        $calledClass = static::class;
-        // 校验
-        Verify::callClass($calledClass);
-        $calledParentClass = get_parent_class($calledClass);
-        $di = \Phalcon\Di::getDefault();
-        /**
-         * @var \Swallow\Annotations\AnnotationProxyFactory $annotationProxyFactory
-         */
-        $annotationProxyFactory = $di->getShared(AnnotationProxyFactory::class);
-        $args = func_get_args();
-
-        $proxyObject = $annotationProxyFactory->createProxy($calledClass, function () use ($args, $calledClass) {
-            $group = strstr($calledClass, '\\', true);
-            $reflectionClass = new \ReflectionClass($calledClass);
-            $instance = $reflectionClass->newInstanceWithoutConstructor();
-            $constructor = $reflectionClass->getConstructor();
-            if (!$constructor->isPublic()) {
-                $constructor->setAccessible(true);
-            }
-            $constructor->invokeArgs($instance, $args);
-            $instance->setModuleName($group);
-
-            return $instance;
-        }, [
-            'eventType' => $calledParentClass,
-        ]);
-
-        return $proxyObject;
-    }
-
-    /**
      * 设置集合.
      *
      * @param string $collectionName 集合名
