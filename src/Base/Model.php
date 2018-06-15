@@ -1079,7 +1079,7 @@ abstract class Model extends Base
                             $q = $comparison[$value[0]];
                             $var = $value[1];
                             if (!is_array($var)) {
-                                $var = explode(',', $var);
+                                $var = explode(',', (string)$var);
                             }
                             $var = implode("','", self::safe($var));
                             $var = "{$q} ('{$var}')";
