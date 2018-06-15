@@ -1,17 +1,23 @@
 <?php
+
+declare(strict_types=1);
+
 /*
- * PHP version 5.5
+ * This file is part of eelly package.
  *
- * @copyright Copyright (c) 2012-2017 EELLY Inc. (http://www.eelly.com)
- * @link      http://www.eelly.com
- * @license   衣联网版权所有
+ * (c) eelly.com
+ *
+ * For the full copyright and license information, please view the LICENSE
+ * file that was distributed with this source code.
  */
 
 namespace Swallow\Base;
 
+use Swallow\Annotations\AnnotationProxyFactory;
 use Swallow\Core\Base;
 use Swallow\Core\Db;
 use Swallow\Core\Log;
+use Swallow\Debug\Verify;
 
 /**
  * 模块 -> 模形基类
@@ -124,7 +130,7 @@ abstract class Model extends Base
         $className = get_class($this);
         $classNamePath = explode('\\', $className);
         $className = substr(array_pop($classNamePath), 0, -5);
-        current($classNamePath) == 'AopProxy' && array_shift($classNamePath);
+        'AopProxy' == current($classNamePath) && array_shift($classNamePath);
         $this->nameSapce = implode('\\', $classNamePath);
         $this->db = Db::getInstance(current($classNamePath));
         $this->prefix = Db::$prefix;
@@ -141,6 +147,43 @@ abstract class Model extends Base
             $this->tableFullName = $this->prefix.$this->tableName;
         }
         $this->init();
+    }
+
+    /**
+     * 获取单例.
+     *
+     * @return static
+     */
+    public static function getInstance()
+    {
+        $calledClass = static::class;
+        // 校验
+        Verify::callClass($calledClass);
+        $calledParentClass = get_parent_class($calledClass);
+        $di = \Phalcon\Di::getDefault();
+        /**
+         * @var \Swallow\Annotations\AnnotationProxyFactory $annotationProxyFactory
+         */
+        $annotationProxyFactory = $di->getShared(AnnotationProxyFactory::class);
+        $args = func_get_args();
+
+        $proxyObject = $annotationProxyFactory->createProxy($calledClass, function () use ($args, $calledClass) {
+            $group = strstr($calledClass, '\\', true);
+            $reflectionClass = new \ReflectionClass($calledClass);
+            $instance = $reflectionClass->newInstanceWithoutConstructor();
+            $constructor = $reflectionClass->getConstructor();
+            if (!$constructor->isPublic()) {
+                $constructor->setAccessible(true);
+            }
+            $constructor->invokeArgs($instance, $args);
+            $instance->setModuleName($group);
+
+            return $instance;
+        }, [
+            'eventType' => $calledParentClass,
+        ]);
+
+        return $proxyObject;
     }
 
     /**
@@ -205,7 +248,7 @@ abstract class Model extends Base
                     return $this->prefix.strtolower($match[1]);
                 }, $this->option['join']);
         } elseif (is_array($join)) {
-            $joinType = $joinType == 'left' ? ' LEFT JOIN' : ' '.strtoupper($joinType).' JOIN';
+            $joinType = 'left' == $joinType ? ' LEFT JOIN' : ' '.strtoupper($joinType).' JOIN';
             $this->option['join'] = $this->alias;
             foreach ($join as $table => $on) {
                 //.开关的联到基础服务表
@@ -459,7 +502,7 @@ abstract class Model extends Base
     public function find($id = null)
     {
         $this->limit(1);
-        if ($id !== null) {
+        if (null !== $id) {
             $this->where([$this->pk => $id]);
         }
         $sql = $this->buildQuerySql();
@@ -484,7 +527,7 @@ abstract class Model extends Base
     public function getFieldOne($field)
     {
         $arr = $this->getField($field);
-        if ($arr != false) {
+        if (false != $arr) {
             return current($arr);
         } else {
             return '';
@@ -664,7 +707,7 @@ abstract class Model extends Base
         } else {
             $set = [];
             foreach ($data as $key => $value) {
-                if ($key != '_string') {
+                if ('_string' != $key) {
                     $value = self::safe($value);
                     $set[] = " `{$key}` = '{$value}' ";
                 } else {
@@ -770,12 +813,12 @@ abstract class Model extends Base
         if ($result) {
             foreach ($result as $key => $val) {
                 $info[$val['Field']] = [
-                    'name' => $val['Field'],
-                    'type' => $val['Type'],
-                    'notnull' => (bool) ($val['Null'] === ''),  // not null is empty, null is yes
+                    'name'    => $val['Field'],
+                    'type'    => $val['Type'],
+                    'notnull' => (bool) ('' === $val['Null']),  // not null is empty, null is yes
                     'default' => $val['Default'],
-                    'primary' => (strtolower($val['Key']) == 'pri'),
-                    'autoinc' => (strtolower($val['Extra']) == 'auto_increment'), ];
+                    'primary' => ('pri' == strtolower($val['Key'])),
+                    'autoinc' => ('auto_increment' == strtolower($val['Extra'])), ];
             }
         }
 
@@ -820,7 +863,7 @@ abstract class Model extends Base
     public function startTrans()
     {
         $r = false;
-        if (self::$transTimes == 0) {
+        if (0 == self::$transTimes) {
             $r = $this->db->beginTransaction();
         }
         $r && self::$transTimes++;
@@ -885,7 +928,7 @@ abstract class Model extends Base
     /**
      * 初始化.
      */
-    protected function init()
+    protected function init(): void
     {
     }
 
@@ -903,7 +946,7 @@ abstract class Model extends Base
         }
         $retval = [];
         // $lists 出现内存不足记录当时执行的sql语句，无问题后请删除
-        if (2000 < strlen($this->sql))  {
+        if (2000 < strlen($this->sql)) {
             $sql = sprintf('%s ... (%d chars) ... %s', substr($this->sql, 0, 1000), strlen($this->sql) - 2000, substr($this->sql, -1000, 1000));
         } else {
             $sql = $this->sql;
@@ -970,16 +1013,16 @@ abstract class Model extends Base
     {
         $sqlWhere = [];
         $comparison = [
-            'eq' => '=',
-            'neq' => '<>',
-            'gt' => '>',
-            'egt' => '>=',
-            'lt' => '<',
-            'elt' => '<=',
+            'eq'      => '=',
+            'neq'     => '<>',
+            'gt'      => '>',
+            'egt'     => '>=',
+            'lt'      => '<',
+            'elt'     => '<=',
             'notlike' => 'NOT LIKE',
-            'like' => 'LIKE',
-            'in' => 'IN',
-            'notin' => 'NOT IN',
+            'like'    => 'LIKE',
+            'in'      => 'IN',
+            'notin'   => 'NOT IN',
             'between' => 'BETWEEN', ];
         $autoEq = function ($where) {
             return is_array($where) ? $where : ['eq', $where];
@@ -1106,7 +1149,7 @@ abstract class Model extends Base
     /**
      * 清空设置.
      */
-    private function clearSet()
+    private function clearSet(): void
     {
         $this->option = [];
     }

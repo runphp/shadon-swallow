@@ -15,6 +15,7 @@ namespace Swallow\Di;
 
 use Phalcon\Di\Service;
 use Swallow\Base\Logic;
+use Swallow\Base\Model;
 use Swallow\Core\Conf;
 use Swallow\Events\Event\CacheListener;
 use Swallow\Events\Event\CatchListener;
@@ -55,8 +56,12 @@ class FactoryDefault extends \Phalcon\Di\FactoryDefault
             $eventsManager->attach(Logic::class, $this->getShared(TransactionListener::class), 50);
             $eventsManager->attach(Logic::class, $this->getShared(CacheListener::class), 100);
             MODULE_DEBUG && $eventsManager->attach(Logic::class, $this->getShared(DeprecatedListener::class), 150);
+
             // service listener
             $eventsManager->attach(\Swallow\Base\Service::class, $this->getShared(CatchListener::class), 100);
+
+            // model listener
+            $eventsManager->attach(Model::class, $this->getShared(TransactionListener::class), 50);
 
             return $eventsManager;
         }, true);
