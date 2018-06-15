@@ -13,8 +13,10 @@ declare(strict_types=1);
 
 namespace Swallow\Mongodb;
 
+use Swallow\Annotations\AnnotationProxyFactory;
 use Swallow\Core\Base;
 use Swallow\Core\Log;
+use Swallow\Debug\Verify;
 use Swallow\Exception\DbException;
 use Swallow\Exception\StatusCode;
 use Swallow\Mongodb\Exception\MongoDuplicateKeyException;
@@ -132,6 +134,43 @@ abstract class Mongodb extends Base
         $this->oCollectionName = $collection;
         $this->setCollection($collection);
         $this->init();
+    }
+
+    /**
+     * 获取单例.
+     *
+     * @return static
+     */
+    public static function getInstance()
+    {
+        $calledClass = static::class;
+        // 校验
+        Verify::callClass($calledClass);
+        $calledParentClass = get_parent_class($calledClass);
+        $di = \Phalcon\Di::getDefault();
+        /**
+         * @var \Swallow\Annotations\AnnotationProxyFactory $annotationProxyFactory
+         */
+        $annotationProxyFactory = $di->getShared(AnnotationProxyFactory::class);
+        $args = func_get_args();
+
+        $proxyObject = $annotationProxyFactory->createProxy($calledClass, function () use ($args, $calledClass) {
+            $group = strstr($calledClass, '\\', true);
+            $reflectionClass = new \ReflectionClass($calledClass);
+            $instance = $reflectionClass->newInstanceWithoutConstructor();
+            $constructor = $reflectionClass->getConstructor();
+            if (!$constructor->isPublic()) {
+                $constructor->setAccessible(true);
+            }
+            $constructor->invokeArgs($instance, $args);
+            $instance->setModuleName($group);
+
+            return $instance;
+        }, [
+            'eventType' => $calledParentClass,
+        ]);
+
+        return $proxyObject;
     }
 
     /**
@@ -460,13 +499,13 @@ abstract class Mongodb extends Base
         return $this->c->createIndex($keys, $options);
     }
 
-   /**
+    /**
      * 管道操作
      * http://php.net/manual/zh/mongocollection.aggregate.php
      * http://docs.mongodb.org/manual/meta/aggregation-quick-reference/.
      *
      * @param array $pipeline 管道
-     * @param array $options 设置
+     * @param array $options  设置
      *
      * @author zengzhihao<zengzhihao@eelly.net>
      *
@@ -482,7 +521,7 @@ abstract class Mongodb extends Base
             ],
         ];
         !empty($options) && $arrayMap = array_merge($arrayMap, $options);
-        
+
         $result = $this->c->aggregate($pipeline, $arrayMap);
 
         return [
