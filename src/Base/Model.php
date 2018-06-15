@@ -844,7 +844,7 @@ abstract class Model extends Base
     public function create($field, $post)
     {
         $post = !empty($post) ? $post : $_POST;
-        $field = explode(',', $field);
+        $field = explode(',', (string)$field);
         $odata = [];
         foreach ($field as $value) {
             if (isset($post[$value])) {
@@ -1042,7 +1042,7 @@ abstract class Model extends Base
             if (!empty($where['_multi'])) {
                 unset($where['_multi']);
                 $isAnd = 0 < strpos($field, '&');
-                $fields = explode($isAnd ? '&' : '|', $field);
+                $fields = explode($isAnd ? '&' : '|', (string)$field);
                 $tmp = [];
                 foreach ($fields as $k => $f) {
                     $tmp[$f] = $where[$k];
@@ -1058,7 +1058,7 @@ abstract class Model extends Base
                 $field = $autoField($field);
                 foreach ($where as &$value) {
                     $value = $autoEq($value);
-                    $val = strtolower($value[0]);
+                    $val = strtolower((string)$value[0]);
                     switch ($val) {
                         case 'eq':
                         case 'neq':
@@ -1089,7 +1089,7 @@ abstract class Model extends Base
                             $q = $comparison[$value[0]];
                             $var = $value[1];
                             if (!is_array($var)) {
-                                $var = explode(',', $var);
+                                $var = explode(',', (string)$var);
                             }
                             $var = array_map('intval', $var);
                             $var = "{$q} '{$var[0]}' AND '{$var[1]}'";
@@ -1122,7 +1122,7 @@ abstract class Model extends Base
     private function doSerialize($q)
     {
         if (is_array($q) && !empty($this->option['serialize'])) {
-            $serialize = explode(',', $this->option['serialize']);
+            $serialize = explode(',', (string)$this->option['serialize']);
             // 是否为多维
             if (is_array($q[0])) {
                 foreach ($q as &$value) {
@@ -1164,7 +1164,7 @@ abstract class Model extends Base
     private function unSerialize($q)
     {
         if (is_array($q) && !empty($this->option['serialize'])) {
-            $serialize = explode(',', $this->option['serialize']);
+            $serialize = explode(',', (string)$this->option['serialize']);
             // 是否为多维
             if (is_array($q[0])) {
                 foreach ($q as &$value) {
