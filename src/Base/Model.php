@@ -928,7 +928,7 @@ abstract class Model extends Base
     /**
      * 初始化.
      */
-    protected function init(): void
+    protected function init()
     {
     }
 
