@@ -13,10 +13,7 @@ declare(strict_types=1);
 
 namespace Swallow\Mongodb;
 
-use Swallow\Annotations\AnnotationProxyFactory;
-use Swallow\Core\Base;
 use Swallow\Core\Log;
-use Swallow\Debug\Verify;
 use Swallow\Exception\DbException;
 use Swallow\Exception\StatusCode;
 use Swallow\Mongodb\Exception\MongoDuplicateKeyException;
@@ -31,7 +28,7 @@ use Swallow\Mongodb\Exception\MongoDuplicateKeyException;
  *
  * @version    1.0
  */
-abstract class Mongodb extends Base
+abstract class Mongodb
 {
     /**
      * 数据库对象
