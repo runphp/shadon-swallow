@@ -250,6 +250,9 @@ abstract class Model extends Base
         } elseif (is_array($join)) {
             $joinType = 'left' == $joinType ? ' LEFT JOIN' : ' '.strtoupper($joinType).' JOIN';
             $this->option['join'] = $this->alias;
+            if (!empty($this->option['forceindex']) && !empty($this->option['forceindex'][$this->tableFullName])) {
+                $this->option['join'] .= ' ' . $this->option['forceindex'][$this->tableFullName];
+            }
             foreach ($join as $table => $on) {
                 //.开关的联到基础服务表
                 if ('.' == $table[0]) {
@@ -972,7 +975,8 @@ abstract class Model extends Base
         $sql = 'SELECT';
         $sql .= empty($this->option['field']) ? ' *' : ' '.$this->option['field'];
         $sql .= ' FROM `'.$this->tableFullName.'`';
-        !empty($this->option['forceindex']) && !empty($this->option['forceindex'][$this->tableFullName]) && $sql .= ' '.$this->option['forceindex'][$this->tableFullName];
+        !empty($this->option['forceindex']) && !empty($this->option['forceindex'][$this->tableFullName]) && empty($this->option['join']) && $sql .= ' '.$this->option['forceindex'][$this->tableFullName];
+
         !empty($this->option['join']) && $sql .= ' '.$this->option['join'];
         !empty($this->option['where']) && $sql .= ' '.$this->option['where'];
         !empty($this->option['group']) && $sql .= ' '.$this->option['group'];
