@@ -1,15 +1,21 @@
 <?php
+
+declare(strict_types=1);
+
 /*
- * PHP version 5.5
+ * This file is part of eelly package.
  *
- * @copyright Copyright (c) 2012-2017 EELLY Inc. (http://www.eelly.com)
- * @link      http://www.eelly.com
- * @license   衣联网版权所有
+ * (c) eelly.com
+ *
+ * For the full copyright and license information, please view the LICENSE
+ * file that was distributed with this source code.
  */
 
 namespace Swallow\Base;
 
+use Swallow\Annotations\AnnotationProxyFactory;
 use Swallow\Core\Base;
+use Swallow\Debug\Verify;
 use Swallow\Exception\LogicException;
 use Swallow\Exception\StatusCode;
 
@@ -51,6 +57,43 @@ abstract class Service extends Base
         } else {
             $this->init();
         }
+    }
+
+    /**
+     * 获取单例.
+     *
+     * @return static
+     */
+    public static function getInstance()
+    {
+        $calledClass = static::class;
+        // 校验
+        Verify::callClass($calledClass);
+        $calledParentClass = get_parent_class($calledClass);
+        $di = \Phalcon\Di::getDefault();
+        /**
+         * @var \Swallow\Annotations\AnnotationProxyFactory $annotationProxyFactory
+         */
+        $annotationProxyFactory = $di->getShared(AnnotationProxyFactory::class);
+        $args = func_get_args();
+
+        $proxyObject = $annotationProxyFactory->createProxy($calledClass, function () use ($args, $calledClass) {
+            $group = strstr($calledClass, '\\', true);
+            $reflectionClass = new \ReflectionClass($calledClass);
+            $instance = $reflectionClass->newInstanceWithoutConstructor();
+            $constructor = $reflectionClass->getConstructor();
+            if (!$constructor->isPublic()) {
+                $constructor->setAccessible(true);
+            }
+            $constructor->invokeArgs($instance, $args);
+            $instance->setModuleName($group);
+
+            return $instance;
+        }, [
+            'eventType' => $calledParentClass,
+        ]);
+
+        return $proxyObject;
     }
 
     /**

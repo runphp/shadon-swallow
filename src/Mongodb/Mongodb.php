@@ -13,7 +13,6 @@ declare(strict_types=1);
 
 namespace Swallow\Mongodb;
 
-use Swallow\Core\Base;
 use Swallow\Core\Log;
 use Swallow\Exception\DbException;
 use Swallow\Exception\StatusCode;
@@ -29,7 +28,7 @@ use Swallow\Mongodb\Exception\MongoDuplicateKeyException;
  *
  * @version    1.0
  */
-abstract class Mongodb extends Base
+abstract class Mongodb
 {
     /**
      * 数据库对象
@@ -460,13 +459,13 @@ abstract class Mongodb extends Base
         return $this->c->createIndex($keys, $options);
     }
 
-   /**
+    /**
      * 管道操作
      * http://php.net/manual/zh/mongocollection.aggregate.php
      * http://docs.mongodb.org/manual/meta/aggregation-quick-reference/.
      *
      * @param array $pipeline 管道
-     * @param array $options 设置
+     * @param array $options  设置
      *
      * @author zengzhihao<zengzhihao@eelly.net>
      *
@@ -482,7 +481,7 @@ abstract class Mongodb extends Base
             ],
         ];
         !empty($options) && $arrayMap = array_merge($arrayMap, $options);
-        
+
         $result = $this->c->aggregate($pipeline, $arrayMap);
 
         return [

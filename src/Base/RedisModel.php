@@ -19,6 +19,7 @@ use Swallow\Debug\Trace;
  * @author  lanchuwei<lanchuwei@eelly.net>
  * @since   2016年06月13日
  * @version 1.0
+ * @deprecated
  */
 class RedisModel extends Base
 {
@@ -46,7 +47,17 @@ class RedisModel extends Base
         $this->redis = Redis::getInstance();
         $this->prefix = $this->setPrefix();
     }
-    
+
+    public static function getInstance()
+    {
+        static $instance;
+        if (null === $instance) {
+            $instance = new static();
+        }
+
+        return $instance;
+    }
+
     /**
      *  设置key前缀
      */
