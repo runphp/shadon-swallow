@@ -134,6 +134,7 @@ class VerifyBackTraceStandard
                     && 'Behavior' != $classArr[1]
                     && 'Aggregate' != $classArr[1]
                     && 'Phalcon' != $classArr[0]
+                    && 'App' != $classArr[0]
                 ) {
                     throw new CodeStyleException($msg);
                 } elseif ($classNameArr[0] == $classArr[0] && 'Controller' != substr($trace['class'], -10) && 'Behavior' != substr($trace['class'], -8)) {
