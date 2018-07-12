@@ -91,7 +91,6 @@ class Db
      */
     public function query($sql)
     {
-        \Swallow\Debug\Verify::querySql($sql);
         return $this->db->query($sql);
     }
 
@@ -103,7 +102,6 @@ class Db
      */
     public function execute($sql)
     {
-        \Swallow\Debug\Verify::querySql($sql);
         return $this->db->execute($sql);
     }
 

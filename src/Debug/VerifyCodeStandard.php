@@ -191,13 +191,14 @@ class VerifyCodeStandard
      */
     private static function verifyClassDocComment(): void
     {
-        $docComment = trim(self::$reflector->getDocComment());
+        $docComment = self::$reflector->getDocComment();
         if ($docComment) {
+            $docComment = trim($docComment);
             $msgStatus = false;
             if ('/**' != substr($docComment, 0, 3) || '*/' != substr($docComment, -2)) {
                 $msgStatus = true;
             }
-            $docArr = ['@author', '@since'];
+            $docArr = ['@author'];
             $pos = 0;
             foreach ($docArr as $doc) {
                 $pos = strpos($docComment, $doc, $pos);

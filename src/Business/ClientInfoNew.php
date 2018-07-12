@@ -48,7 +48,7 @@ class ClientInfoNew
      * @param int $uid 用户id
      * @param array $clientInfo 客户端信息
      */
-    public function setInfo(int $uid, array $clientInfo): void
+    public function setInfo(int $uid, array $clientInfo = []): void
     {
         $this->userLoginInfo['uid'] = $uid;
         $this->clientInfo = array_merge($this->clientInfo, $clientInfo);
