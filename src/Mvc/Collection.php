@@ -206,9 +206,9 @@ abstract class Collection extends PhalconCollection implements Unserializable
      *
      * @since 2017年3月14日
      */
-    public static function aggregate(array $parameters = null)
+    public static function aggregate(array $parameters = null, array $options = null) : array
     {
-        $result = parent::aggregate($parameters);
+        $result = parent::aggregate($parameters, $options);
         $return = [
             'result' => $result->toArray(),
         ];
