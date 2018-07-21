@@ -607,7 +607,7 @@ class Application extends \Phalcon\Mvc\Application
                 try {
                     $res = call_user_func_array([$sdk, $this->method], $this->getNewArgs($this->serviceName, $this->method, $this->args));
                 } catch (\GuzzleHttp\Exception\ClientException $e) {
-                    throw new \LogicException($e->getMessage(), 708 /* 用户token失效 */);
+                    throw new LogicException($e->getMessage(), 708 /* 用户token失效 */);
                 }
             } elseif ($isOld) {
                 // 过渡版本 : android和ios客户端，厂+版本2.2.0，店+版本4.3.0之前的版本
