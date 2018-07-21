@@ -13,7 +13,7 @@ namespace Swallow\Bootstrap;
  *
  * @author 李焯桓 <lizhuohuan@eelly.net>
  * @since 2017年3月12日
- * 
+ * @deprecated
  */
 interface ApiStatisticsInterface
 {
