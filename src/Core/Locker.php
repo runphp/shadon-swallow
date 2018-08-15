@@ -8,6 +8,7 @@
  */
 namespace Swallow\Core;
 
+use Predis\Client;
 use Swallow\Redis\Redis;
 
 /**
@@ -31,7 +32,12 @@ class Locker
      */
     public static function lock($lockName, $ttl = 600)
     {
-        $redis = Redis::getInstance();
+        static $redis;
+        if (null == $redis) {
+            $redisServer = require CONFIG_PATH . '/config.predis.php';
+            $redis = new Client($redisServer['parameters'], $redisServer['options']);
+        }
+        //$redis = Redis::getInstance();
         try {
             $return = $redis->set(
                 $lockName,
