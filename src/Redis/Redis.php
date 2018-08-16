@@ -27,7 +27,7 @@ class Redis
      *
      * @param string $serverId 服务id
      *
-     * @return \Redis
+     * @return Client
      *
      * @author 陈淡华<chendanhua@eelly.net>
      *
