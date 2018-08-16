@@ -42,7 +42,7 @@ class Redis
             $serverId = 'predis.'.$serverId;
         }
         if (!isset($redis[$serverId])) {
-            $server = CONFIG_PATH.'/config.'.$serverId.'.php';
+            $server = require CONFIG_PATH.'/config.'.$serverId.'.php';
             $redis[$serverId] = new Client($server['parameters'], $server['options']);
         }
 
