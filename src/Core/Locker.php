@@ -89,7 +89,7 @@ class Locker
      */
     public static function unLock($resource): void
     {
-        $lock = self::getLock($resource, $ttl);
+        $lock = self::getLock($resource);
         $lock->release();
     }
 }
