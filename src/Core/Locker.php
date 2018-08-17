@@ -41,7 +41,7 @@ class Locker
         }
 
         if (!isset(self::$locks[$resource])) {
-            self::$locks[$resource] = self::$lockFactory->createLock($resource, $ttl);
+            self::$locks[$resource] = self::$lockFactory->createLock($resource, $ttl, false);
         }
 
         return self::$locks[$resource];
