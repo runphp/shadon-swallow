@@ -83,11 +83,11 @@ class Locker
      * 开锁
      *
      *
-     * @param string $lockName
+     * @param string $resource
      * @author hehui<hehui@eelly.net>
      * @since  2016年11月2日
      */
-    public static function unLock($lockName): void
+    public static function unLock($resource): void
     {
         $lock = self::getLock($resource, $ttl);
         $lock->release();
