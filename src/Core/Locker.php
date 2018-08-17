@@ -28,20 +28,6 @@ class Locker
     private static $locks = [];
 
     /**
-     * @return Factory
-     */
-    private static function getLockFactory()
-    {
-        if (null === self::$lockFactory) {
-            $redisServer = require CONFIG_PATH . '/config.predis.php';
-            $redis = new Client($redisServer['parameters'], $redisServer['options']);
-            self::$lockFactory = new Factory(new RedisStore($redis));
-        }
-        return self::$lockFactory;
-
-    }
-
-    /**
      * @param $resource
      * @param int $ttl
      * @return Lock
