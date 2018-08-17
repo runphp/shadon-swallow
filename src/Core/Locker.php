@@ -9,7 +9,6 @@
 namespace Swallow\Core;
 
 use Predis\Client;
-use Symfony\Component\Lock\Exception\LockAcquiringException;
 use Symfony\Component\Lock\Factory;
 use Symfony\Component\Lock\Lock;
 use Symfony\Component\Lock\Store\RedisStore;
@@ -58,11 +57,8 @@ class Locker
     public static function lock($resource, $ttl = 600): bool
     {
         $lock = self::getLock($resource, $ttl);
-        try {
-            return $lock->acquire();
-        } catch (LockAcquiringException $e) {
-            return false;
-        }
+
+        return $lock->acquire();
     }
 
     /**
