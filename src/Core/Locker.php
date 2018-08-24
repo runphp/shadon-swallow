@@ -8,7 +8,10 @@
  */
 namespace Swallow\Core;
 
-use Swallow\Redis\Redis;
+use Predis\Client;
+use Symfony\Component\Lock\Factory;
+use Symfony\Component\Lock\Lock;
+use Symfony\Component\Lock\Store\RedisStore;
 
 /**
  * 锁(redis)
@@ -19,49 +22,56 @@ use Swallow\Redis\Redis;
  */
 class Locker
 {
+    private static $lockFactory;
 
+    private static $locks = [];
+
+    /**
+     * @param $resource
+     * @param int $ttl
+     * @return Lock
+     */
+    private static function getLock($resource, $ttl = 600)
+    {
+        if (null === self::$lockFactory) {
+            $redisServer = require CONFIG_PATH . '/config.predis.php';
+            $redis = new Client($redisServer['parameters'], $redisServer['options']);
+            self::$lockFactory = new Factory(new RedisStore($redis));
+        }
+
+        if (!isset(self::$locks[$resource])) {
+            self::$locks[$resource] = self::$lockFactory->createLock($resource, $ttl, false);
+        }
+
+        return self::$locks[$resource];
+    }
     /**
      * 加锁
      *
      *
-     * @param string $lockName
+     * @param string $resource
      * @param number $ttl
      * @author hehui<hehui@eelly.net>
      * @since  2016年11月2日
      */
-    public static function lock($lockName, $ttl = 600)
+    public static function lock($resource, $ttl = 600): bool
     {
-        $redis = Redis::getInstance();
-        try {
-            $return = $redis->set(
-                $lockName,
-                getmypid(),
-                [
-                    'nx',
-                    'ex' => $ttl
-                ]
-            );
-        } catch (\RedisClusterException $e) {
-            $return = false;
-        }
+        $lock = self::getLock($resource, $ttl);
 
-        return $return;
+        return $lock->acquire();
     }
 
     /**
      * 开锁
      *
      *
-     * @param string $lockName
+     * @param string $resource
      * @author hehui<hehui@eelly.net>
      * @since  2016年11月2日
      */
-    public static function unLock($lockName)
+    public static function unLock($resource): void
     {
-        $redis = Redis::getInstance();
-        if ($redis->get($lockName) == getmypid()) {
-            return $redis->del($lockName);
-        }
-        return false;
+        $lock = self::getLock($resource);
+        $lock->release();
     }
 }

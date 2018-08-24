@@ -9,8 +9,7 @@
 
 namespace Swallow\Redis;
 
-use Swallow\Core\Conf;
-use Whoops\Exception\ErrorException;
+use Predis\Client;
 
 /**
  * Redis 基类.
@@ -24,84 +23,29 @@ use Whoops\Exception\ErrorException;
 class Redis
 {
     /**
-     * 构造.
-     *
-     * @author 陈淡华<chendanhua@eelly.net>
-     *
-     * @since  2016-1-9
-     */
-    public function __construct()
-    {
-        $this->init();
-    }
-
-    /**
-     * 初始化.
-     *
-     * @author 陈淡华<chendanhua@eelly.net>
-     *
-     * @since  2016-1-9
-     */
-    protected function init()
-    {
-    }
-
-    /**
      * 获取redis类.
      *
-     * @param string $configType 配置选项
+     * @param string $serverId 服务id
      *
-     * @return \Redis
+     * @return Client
      *
      * @author 陈淡华<chendanhua@eelly.net>
      *
      * @since  2016-1-9
      */
-    public static function getInstance($configType = 'default')
+    public static function getInstance($serverId = '')
     {
-        static $obj = [];
-        if (!isset($obj[$configType])) {
-            $config = Conf::get('Swallow/redis/'.$configType);
-            if (is_array($config)) {
-                $obj[$configType] = self::initRedis($config);
-            } else {
-                $obj[$configType] = new \Redis();
-                $arr = explode(':', $config, 2);
-                $obj[$configType]->connect($arr[0], $arr[1]);
-            }
-        }
-
-        return $obj[$configType];
-    }
-
-    /**
-     * 尝试多次链接.
-     *
-     * @param array|string $config 配置
-     * @param number       $times  尝试次数
-     *
-     * @return \RedisCluster
-     *
-     * @author 陈淡华<chendanhua@eelly.net>
-     *
-     * @since 2016-1-9
-     */
-    private static function initRedis($config, $times = 3)
-    {
-        $exception = null;
-        try {
-            return new \RedisCluster(null, $config['seeds'], $config['timeout'], $config['read_timeout']);
-        } catch (\RedisClusterException $e) {
-            $exception = $e;
-        } catch (\RedisException $e) {
-            $exception = $e;
-        } catch (ErrorException $e) {
-            $exception = $e;
-        }
-        if ($times > 0) {
-            return self::initRedis($config, --$times);
+        static $redis = [];
+        if (empty($serverId)) {
+            $serverId = 'predis';
         } else {
-            throw $exception;
+            $serverId = 'predis.'.$serverId;
         }
+        if (!isset($redis[$serverId])) {
+            $server = require CONFIG_PATH.'/config.'.$serverId.'.php';
+            $redis[$serverId] = new Client($server['parameters'], $server['options']);
+        }
+
+        return $redis[$serverId];
     }
 }
