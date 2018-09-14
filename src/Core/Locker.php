@@ -9,7 +9,6 @@
 namespace Swallow\Core;
 
 use Predis\Client;
-use Symfony\Component\Lock\Exception\LockAcquiringException;
 use Symfony\Component\Lock\Factory;
 use Symfony\Component\Lock\Lock;
 use Symfony\Component\Lock\Store\RedisStore;
@@ -28,20 +27,6 @@ class Locker
     private static $locks = [];
 
     /**
-     * @return Factory
-     */
-    private static function getLockFactory()
-    {
-        if (null === self::$lockFactory) {
-            $redisServer = require CONFIG_PATH . '/config.predis.php';
-            $redis = new Client($redisServer['parameters'], $redisServer['options']);
-            self::$lockFactory = new Factory(new RedisStore($redis));
-        }
-        return self::$lockFactory;
-
-    }
-
-    /**
      * @param $resource
      * @param int $ttl
      * @return Lock
@@ -55,7 +40,7 @@ class Locker
         }
 
         if (!isset(self::$locks[$resource])) {
-            self::$locks[$resource] = self::$lockFactory->createLock($resource, $ttl);
+            self::$locks[$resource] = self::$lockFactory->createLock($resource, $ttl, false);
         }
 
         return self::$locks[$resource];
@@ -72,24 +57,21 @@ class Locker
     public static function lock($resource, $ttl = 600): bool
     {
         $lock = self::getLock($resource, $ttl);
-        try {
-            return $lock->acquire();
-        } catch (LockAcquiringException $e) {
-            return false;
-        }
+
+        return $lock->acquire();
     }
 
     /**
      * 开锁
      *
      *
-     * @param string $lockName
+     * @param string $resource
      * @author hehui<hehui@eelly.net>
      * @since  2016年11月2日
      */
-    public static function unLock($lockName): void
+    public static function unLock($resource): void
     {
-        $lock = self::getLock($resource, $ttl);
+        $lock = self::getLock($resource);
         $lock->release();
     }
 }

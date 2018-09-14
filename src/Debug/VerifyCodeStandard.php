@@ -344,7 +344,7 @@ class VerifyCodeStandard
             throw new CodeStyleException(self::$className.'：方法 '.$name.' 的@catch注解使用不正确，请仔细阅读规则文档！');
         }
         if (strpos($docComment, '* @MyCache') && !in_array($className[1], ['Logic'])) {
-            throw new CodeStyleException(self::$className.'：方法 '.$name.' 的@cache注解使用不正确，请仔细阅读规则文档！');
+            throw new CodeStyleException(self::$className.'：方法 '.$name.' 的@MyCache注解使用不正确，请仔细阅读规则文档！');
         }
         if (strpos($docComment, '* @trans') && !in_array($className[1], ['Logic', 'Model'])) {
             throw new CodeStyleException(self::$className.'：方法 '.$name.' 的@trans注解使用不正确，请仔细阅读规则文档！');

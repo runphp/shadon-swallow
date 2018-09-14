@@ -78,6 +78,7 @@ class NeteaseIm
                     $response->getReasonPhrase(),
                     $response->getBody()->getContents()
                 );
+            
             throw new \ErrorException($errorMessage);
         }
 
