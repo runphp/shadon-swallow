@@ -42,14 +42,6 @@ class Verify
      */
     public static function callClass($className)
     {
-        static $calledClass = [];
-        if (self::debug()) {
-            if (!isset($calledClass[$className])) {
-                VerifyCodeStandard::verify($className);
-                $calledClass[$className] = true;
-            }
-            VerifyBackTraceStandard::callClass($className);
-        }
     }
 
     /**
@@ -59,9 +51,6 @@ class Verify
      */
     public static function callMethod(Joinpoint $jp)
     {
-        if (self::debug() && $jp->getMethodName() != 'init') {
-            VerifyBackTraceStandard::callMethod($jp);
-        }
     }
 
     /**
