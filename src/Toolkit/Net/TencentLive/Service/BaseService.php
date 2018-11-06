@@ -17,16 +17,16 @@ class BaseService extends Service
 {
     protected $ttl = 86400;
 
-    protected $pushUrl = 'rtmp://%s.livepush.myqcloud.com/live/%s?%s';
+    protected $pushUrl = 'rtmp://push.eelly.com/live/%s?%s';
 
     protected $bizId = '3344';
 
     protected $pushKey = '4bda0c7a4fca42abdc7767f5f4d2d4f2';
 
     protected $playUrl = [
-        'RTMP' => 'rtmp://%s.liveplay.myqcloud.com/live/%s',
-        'FLV' => 'http://%s.liveplay.myqcloud.com/live/%s.flv',
-        'HLS' => 'http://%s.liveplay.myqcloud.com/live/%s.m3u8',
+        'RTMP' => 'rtmp://play.eelly.com/live/%s',
+        'FLV' => 'http://play.eelly.com/live/%s.flv',
+        'HLS' => 'http://play.eelly.com/live/%s.m3u8',
     ];
 
     protected function init()
@@ -59,7 +59,6 @@ class BaseService extends Service
             "txTime" => $txTime
         ]);
         $pushUrl = sprintf($this->pushUrl,
-                $this->bizId,
                 $livecode,
                 $extStr
             );
@@ -83,9 +82,8 @@ class BaseService extends Service
             );
         foreach ($this->playUrl as $type => $url){
             $playUrl[$type] = sprintf($url,
-                    $this->bizId,
-                    $liveCode
-                );
+                $liveCode
+            );
         }
 
         return $playUrl;
