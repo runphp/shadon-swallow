@@ -151,6 +151,7 @@ if (! function_exists('mineTypeExtension')) {
             'image/tiff' => 'tiff',
             'image/vnd.djvu' => 'djvu',
             'image/vnd.wap.wbmp' => 'wbmp',
+            'image/webp'         => 'webp',
             'image/x-cmu-raster' => 'ras',
             'image/x-icon' => 'ico',
             'image/x-portable-anymap' => 'pnm',
