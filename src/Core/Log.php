@@ -14,6 +14,7 @@ declare(strict_types=1);
 namespace Swallow\Core;
 
 use Swallow\Logger\Handler\DingDingHandler;
+use Swallow\Logger\Handler\EellyapiHandler;
 use Whoops\Exception\Inspector;
 use Whoops\Handler\PlainTextHandler;
 
@@ -68,8 +69,8 @@ class Log
         $stream = LOG_PATH.'/app.'.date('Ymd').'.txt';
         $handler = new \Monolog\Handler\StreamHandler($stream);
         $logger->pushHandler($handler);
-        $dingding = require CONFIG_PATH.'/config.dingding.php';
-        $logger->pushHandler(new DingDingHandler($dingding['accessToken']));
+        //$dingding = require CONFIG_PATH.'/config.dingding.php';
+        $logger->pushHandler(new EellyapiHandler());
         if (PHP_SAPI == 'cli' && self::$config['is_debug']) {
             $handler = new \Monolog\Handler\StreamHandler('php://stdout');
             $logger->pushHandler($handler);
