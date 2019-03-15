@@ -13,6 +13,7 @@ declare(strict_types=1);
 
 namespace Swallow\Toolkit\Net\NeteaseIm;
 
+use LogicException;
 use Whoops\Exception\ErrorException;
 use Monolog\Logger;
 use Monolog\Handler\StreamHandler;
