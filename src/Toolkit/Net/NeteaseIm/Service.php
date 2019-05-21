@@ -56,7 +56,7 @@ class Service
         $uri = $annotation->getArgument(0);
         $response = $this->neteaseIm->request($uri, $args);
         if ('200' != $response['code']) {
-            throw new ErrorException($response['desc'].'('.$response['code'].')');
+            throw new ErrorException(($response['desc'] ?? : '').'('.$response['code'].')');
         }
 
         return $response;
