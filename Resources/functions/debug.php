@@ -86,3 +86,23 @@ if (! function_exists('exception_handler')) {
         }
     }
 }
+
+/**
+ * 记录文件日志.
+ *
+ * @param mix    $message    数据
+ * @param string $loggerName 文件名（不带后缀）
+ *
+ * @return bool
+ */
+function putFileLog($message, $loggerName)
+{
+    static $logger = [];
+    if (!isset($logger[$loggerName])) {
+        $logger[$loggerName] = new \Monolog\Logger($loggerName);
+        $logger[$loggerName]->pushHandler(new \Monolog\Handler\StreamHandler(LOG_PATH.'/'.$loggerName.'.'.date('Ymd').'.txt', \Monolog\Logger::INFO));
+    }
+    $msg = $_SERVER['REQUEST_URI'];
+
+    return $logger[$loggerName]->info($msg, (array) $message);
+}
