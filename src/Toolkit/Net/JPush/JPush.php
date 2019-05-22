@@ -225,7 +225,19 @@ class JPush {
     public function log($content) {
         if (!is_null($this->logFile)) {
 //             error_log($content . "\r\n", 3, $this->logFile);
-            putFileLog([$content], $this->logFile);
+            $this->putFileLog([$content], $this->logFile);
         }
+    }
+
+    private function putFileLog($message, $loggerName)
+    {
+        static $logger = [];
+        if (!isset($logger[$loggerName])) {
+            $logger[$loggerName] = new \Monolog\Logger($loggerName);
+            $logger[$loggerName]->pushHandler(new \Monolog\Handler\StreamHandler(LOG_PATH.'/'.$loggerName.'.'.date('Ymd').'.txt', \Monolog\Logger::INFO));
+        }
+        $msg = $_SERVER['REQUEST_URI'];
+
+        return $logger[$loggerName]->info($msg, (array) $message);
     }
 }
