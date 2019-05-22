@@ -153,7 +153,7 @@ abstract class Service extends Base
      * 获取用户类型.
      *
      *
-     * @return number
+     * @return int
      *
      * @author hehui<hehui@eelly.net>
      *
