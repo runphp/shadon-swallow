@@ -178,6 +178,7 @@ class JPush {
         $response = array();
         $errorCode = curl_errno($ch);
         if ($errorCode) {
+            $response['http_code'] = 500;
             if ($errorCode === 28) {
                 $response['errorCode'] = 28;
                 $response['body'] = "Response timeout. Your request has probably be received by JPush Server,please check that whether need to be pushed again";
